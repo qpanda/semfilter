@@ -1,33 +1,12 @@
-use clap::{Arg, App};
+mod filter;
+
+use std::fs::File;
+use std::io::stdout;
 
 fn main() {
-    let matches = App::new("My Test Program")
-        .version("0.1.0")
-        .author("Dubious authors <foo@bar.org>")
-        .about("Teaches argument parsing")
-        .arg(Arg::with_name("file")
-                 .short("f")
-                 .long("file")
-                 .takes_value(true)
-                 .help("A cool file"))
-        .arg(Arg::with_name("num")
-                 .short("n")
-                 .long("number")
-                 .takes_value(true)
-                 .help("Five less than your favorite number"))
-        .get_matches();
-
-    let myfile = matches.value_of("file").unwrap_or("input.txt");
-    println!("The file passed is: {}", myfile);
-
-    let num_str = matches.value_of("num");
-    match num_str {
-        None => println!("No idea what your favorite number is."),
-        Some(s) => {
-            match s.parse::<i32>() {
-                Ok(n) => println!("Your favorite number must be {}.", n + 5),
-                Err(_) => println!("That's not a number! {}", s),
-            }
-        }
-    }
+    // let mut input = io::stdin();
+    let mut input = File::open("test.txt").unwrap(); // TODO error handling
+    let mut output = stdout();
+    let mut filter = filter::Filter::new(&mut input, &mut output);
+    filter.filter().unwrap(); // TODO error handling
 }
