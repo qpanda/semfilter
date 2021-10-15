@@ -1,11 +1,13 @@
 pub struct Parser {
-    value_separators: Vec<String>,
+    separators: Vec<String>,
 }
+
+
 
 impl Parser {
     pub fn new() -> Parser {
         Parser {
-            value_separators: vec![String::from(","), String::from(";"), String::from(" ")],
+            separators: vec![String::from(","), String::from(";"), String::from(" ")],
         }
     }
 

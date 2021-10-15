@@ -1,21 +1,16 @@
 use std::io::{BufRead, BufReader, Error, LineWriter, Read, Write};
 
-pub struct Filter<'a> {
-    reader: BufReader<&'a mut dyn Read>,
-    writer: LineWriter<&'a mut dyn Write>,
-}
+pub struct Filter {}
 
-impl<'a> Filter<'a> {
-    pub fn new(read: &'a mut dyn Read, write: &'a mut dyn Write) -> Self {
-        Filter {
-            reader: BufReader::new(read),
-            writer: LineWriter::new(write),
-        }
+impl Filter {
+    pub fn new() -> Self {
+        Filter {}
     }
 
-    pub fn filter(&mut self) -> Result<(), Error> {
-        let reader = &mut self.reader; // TODO explore get_mut()
-        let writer = &mut self.writer; // TODO explore get_mut()
+    // TODO should we return number of lines processed instead of nothing?
+    pub fn filter(&self, read: &mut dyn Read, write: &mut dyn Write) -> Result<(), Error> {
+        let reader = BufReader::new(read);
+        let mut writer = LineWriter::new(write);
         for line in reader.lines() {
             // TODO 1. parse line
             // TODO 2. check match
@@ -37,5 +32,43 @@ impl<'a> Filter<'a> {
         writer.flush()?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use file_diff::diff_files;
+    use tempfile::tempfile;
+
+    #[test]
+    fn empty() {
+        // setup
+        let mut input = tempfile().unwrap();
+        let mut output = tempfile().unwrap();
+        let filter = Filter::new();
+
+        // exercise
+        filter.filter(&mut input, &mut output).unwrap();
+
+        // verify
+        assert!(diff_files(&mut input, &mut output));
+    }
+
+    #[test]
+    fn pass_through() {
+        // setup
+        let mut input = tempfile().unwrap();
+        writeln!(input, "lorem ipsum dolor sit amet consectetuer").unwrap();
+
+        let mut output = tempfile().unwrap();
+
+        let filter = Filter::new();
+
+        // exercise
+        filter.filter(&mut input, &mut output).unwrap();
+
+        // verify
+        assert!(diff_files(&mut input, &mut output));
     }
 }

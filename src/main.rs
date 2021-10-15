@@ -7,6 +7,6 @@ fn main() {
     // let mut input = io::stdin();
     let mut input = File::open("test.txt").unwrap(); // TODO error handling
     let mut output = stdout();
-    let mut filter = filter::Filter::new(&mut input, &mut output);
-    filter.filter().unwrap(); // TODO error handling
+    let mut filter = filter::Filter::new();
+    filter.filter(&mut input, &mut output).unwrap(); // TODO error handling
 }
