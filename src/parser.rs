@@ -1,44 +1,52 @@
-pub struct Parser {}
+use std::fmt::{Display, Formatter, Result};
 
 #[derive(Debug, PartialEq)]
 pub struct Token {
-    separator: bool,
-    text: String,
+    pub separator: bool,
+    pub text: String, // TODO could make this a &str to improve performance
 }
+
+impl Display for Token {
+    fn fmt(&self, fmt: &mut Formatter) -> Result {
+        return fmt.write_str(&self.text);
+    }
+}
+
+pub struct Parser {}
 
 impl Parser {
     // TODO need way to customize separators
-    pub fn new() -> Parser {
+    pub fn new() -> Self {
         Parser {}
     }
 
     // https://stackoverflow.com/questions/32257273/
-    fn tokenize<'a>(&self, line: &str) -> Vec<Token> {
-        let mut result = Vec::new();
+    pub fn tokenize(&self, line: &str) -> Vec<Token> {
+        let mut tokens = Vec::new();
 
         let mut last = 0;
         // TODO allow separators other than whitespaces
         for (index, seperator) in line.match_indices(|c: char| c.is_whitespace()) {
             if last != index {
-                result.push(Token {
+                tokens.push(Token {
                     separator: false,
                     text: String::from(&line[last..index]),
                 });
             }
-            result.push(Token {
+            tokens.push(Token {
                 separator: true,
                 text: String::from(seperator),
             });
             last = index + seperator.len();
         }
         if last != line.len() {
-            result.push(Token {
+            tokens.push(Token {
                 separator: false,
                 text: String::from(&line[last..line.len()]),
             });
         }
 
-        return result;
+        return tokens;
     }
 }
 

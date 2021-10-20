@@ -1,17 +1,35 @@
 use std::io::{BufRead, BufReader, Error, LineWriter, Read, Write};
 
-pub struct Filter {}
+use crate::parser::Parser;
+use crate::parser::Token;
 
-impl Filter {
-    pub fn new() -> Self {
-        Filter {}
+pub struct Filter<'a> {
+    parser: &'a Parser,
+}
+
+impl<'a> Filter<'a> {
+    pub fn new(parser: &'a Parser) -> Self {
+        Filter { parser: parser }
     }
 
     // TODO should we return number of lines processed instead of nothing?
-    pub fn filter(&self, read: &mut dyn Read, write: &mut dyn Write) -> Result<(), Error> {
+    pub fn filter(&self, read: &mut dyn Read, write: &mut dyn Write) -> Result<usize, Error> {
         let reader = BufReader::new(read);
         let mut writer = LineWriter::new(write);
+        let mut lines = 0;
         for line in reader.lines() {
+            let line = match line {
+                Ok(line) => line,
+                Err(e) => return Err(e), // TODO add flag to allow continue on error or fail
+            };
+
+            let tokens = self.parser.tokenize(&line);
+            let t: String = tokens
+                .into_iter()
+                .map(|t: Token| t.text)
+                .collect::<String>();
+
+            // let x = tokens.into_iter().collect();
             // TODO 1. parse line
             // TODO 2. check match
             // TODO 3. output matching line
@@ -25,13 +43,15 @@ impl Filter {
             // if parsed_line.match() {
             //   print(parsed_line)
             // }
-            writer.write_all(line?.as_bytes())?;
+
+            writer.write_all(t.as_bytes())?;
             writer.write_all(b"\n")?;
+            lines += 1;
         }
 
         writer.flush()?;
 
-        Ok(())
+        Ok(lines)
     }
 }
 
@@ -39,36 +59,49 @@ impl Filter {
 mod tests {
     use super::*;
     use file_diff::diff_files;
-    use tempfile::tempfile;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn empty() {
         // setup
-        let mut input = tempfile().unwrap();
-        let mut output = tempfile().unwrap();
-        let filter = Filter::new();
+        let input = NamedTempFile::new().unwrap();
+        let output = NamedTempFile::new().unwrap();
+        let mut input_file = input.reopen().unwrap();
+        let mut output_file = output.reopen().unwrap();
+
+        let parser = Parser::new();
+        let filter = Filter::new(&parser);
 
         // exercise
-        filter.filter(&mut input, &mut output).unwrap();
+        let lines = filter.filter(&mut input_file, &mut output_file).unwrap();
 
         // verify
-        assert!(diff_files(&mut input, &mut output));
+        let mut input_file = input.reopen().unwrap();
+        let mut output_file = output.reopen().unwrap();
+        assert_eq!(0, lines);
+        assert!(diff_files(&mut input_file, &mut output_file));
     }
 
     #[test]
     fn pass_through() {
         // setup
-        let mut input = tempfile().unwrap();
-        writeln!(input, "lorem ipsum dolor sit amet consectetuer").unwrap();
+        let input = NamedTempFile::new().unwrap();
+        let output = NamedTempFile::new().unwrap();
+        let mut input_file = input.reopen().unwrap();
+        let mut output_file = output.reopen().unwrap();
+        writeln!(input_file, "lorem ipsum dolor sit amet consectetuer").unwrap();
+        let mut input_file = input.reopen().unwrap();
 
-        let mut output = tempfile().unwrap();
-
-        let filter = Filter::new();
+        let parser = Parser::new();
+        let filter = Filter::new(&parser);
 
         // exercise
-        filter.filter(&mut input, &mut output).unwrap();
+        let lines = filter.filter(&mut input_file, &mut output_file).unwrap();
 
         // verify
-        assert!(diff_files(&mut input, &mut output));
+        let mut input_file = input.reopen().unwrap();
+        let mut output_file = output.reopen().unwrap();
+        assert_eq!(1, lines);
+        assert!(diff_files(&mut input_file, &mut output_file));
     }
 }
