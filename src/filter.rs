@@ -1,7 +1,10 @@
-use std::io::{BufRead, BufReader, Error, LineWriter, Read, Write};
+use std::collections::HashSet;
+use std::error::Error;
+use std::io::{BufRead, BufReader, LineWriter, Read, Write};
 
 use crate::parser::Parser;
 use crate::parser::Token;
+use crate::parser::Value;
 
 pub struct Filter<'a> {
     parser: &'a Parser,
@@ -12,21 +15,20 @@ impl<'a> Filter<'a> {
         Filter { parser: parser }
     }
 
-    // TODO should we return number of lines processed instead of nothing?
-    pub fn filter(&self, read: &mut dyn Read, write: &mut dyn Write) -> Result<usize, Error> {
+    pub fn filter(&self, read: &mut dyn Read, write: &mut dyn Write) -> Result<usize, Box<dyn Error>> {
         let reader = BufReader::new(read);
         let mut writer = LineWriter::new(write);
         let mut lines = 0;
         for line in reader.lines() {
             let line = match line {
                 Ok(line) => line,
-                Err(e) => return Err(e), // TODO add flag to allow continue on error or fail
+                Err(error) => return Err(error.into()), // TODO add flag to allow continue on error or fail
             };
 
-            let tokens = self.parser.tokenize(&line);
-            let t: String = tokens
+            let results = self.parser.parse(&line, &HashSet::new());
+            let t: String = results
                 .into_iter()
-                .map(|t: Token| t.text)
+                .map(|r: (Token, Value)| r.0.text)
                 .collect::<String>();
 
             // let x = tokens.into_iter().collect();
