@@ -7,7 +7,10 @@
 			"problemMatcher": [
 				"$rustc"
 			],
-			"group": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
 			"label": "Rust: cargo build - semfilter"
 		},
 		{
@@ -15,6 +18,18 @@
 			"subcommand": "run",
 			"group": "build",
 			"label": "Rust: cargo run - semfilter"
+		},
+		{
+			"type": "cargo",
+			"subcommand": "test",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"label": "Rust: cargo test - semfilter"
 		}
 	]
 }
