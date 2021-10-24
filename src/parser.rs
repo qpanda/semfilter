@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::error::Error;
 
 #[derive(Debug, PartialEq)]
@@ -7,7 +6,6 @@ pub struct Token {
     pub text: String, // TODO could make this a &str to improve performance
 }
 
-#[derive(Eq, PartialEq, Hash)]
 pub enum Class {
     Integer,
     Float,
@@ -22,21 +20,18 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn new(token: &Token, classes: &HashSet<Class>) -> Self {
+    // the order of Class in classes is important because it is the order in which we
+    // try to convert token.text to a Value
+    // Class::Integer ⊂ Class::Float
+    // TODO should we sort classes here?
+    pub fn new(token: &Token, classes: &Vec<Class>) -> Self {
         if token.separator {
             return Value::Separator(String::from(&token.text));
         }
 
-        // the order in which we try to convert token.text to a Value is important because
-        // Class::Integer ⊂ Class::Float
-        if classes.contains(&Class::Integer) {
-            if let Ok(integer) = Value::from(&token.text, &Class::Integer) {
-                return integer;
-            }
-        }
-        if classes.contains(&Class::Float) {
-            if let Ok(float) = Value::from(&token.text, &Class::Float) {
-                return float;
+        for class in classes {
+            if let Ok(value) = Value::from(&token.text, &class) {
+                return value;
             }
         }
 
@@ -60,20 +55,23 @@ impl Value {
     }
 }
 
-pub struct Parser {}
+pub struct Parser {
+    classes: Vec<Class>,
+}
 
 impl Parser {
     // TODO need way to customize separators
-    pub fn new() -> Self {
-        Parser {}
+    pub fn new(classes: Vec<Class>) -> Self {
+        // TODO should we sort classes here?
+        Parser { classes: classes }
     }
 
-    pub fn parse(&self, line: &str, classes: &HashSet<Class>) -> Vec<(Token, Value)> {
+    pub fn parse(&self, line: &str) -> Vec<(Token, Value)> {
         let tokens = self.tokenize(line);
 
         let mut result = Vec::new();
         for token in tokens {
-            let value = Value::new(&token, &classes);
+            let value = Value::new(&token, &self.classes);
             result.push((token, value));
         }
         return result;
@@ -163,7 +161,7 @@ mod value_tests {
             separator: false,
             text: String::from("text"),
         };
-        let classes = HashSet::new();
+        let classes = Vec::new();
 
         // exercise
         let separator_value = Value::new(&separator_token, &classes);
@@ -189,7 +187,7 @@ mod value_tests {
             separator: false,
             text: String::from("5.5"),
         };
-        let classes = HashSet::new();
+        let classes = Vec::new();
 
         // exercise
         let text_value = Value::new(&text_token, &classes);
@@ -218,7 +216,7 @@ mod value_tests {
             separator: false,
             text: String::from("5.5"),
         };
-        let classes: HashSet<Class> = vec![Class::Integer].into_iter().collect();
+        let classes: Vec<Class> = vec![Class::Integer];
 
         // exercise
         let text_value = Value::new(&text_token, &classes);
@@ -248,7 +246,7 @@ mod value_tests {
             separator: false,
             text: float.to_string(),
         };
-        let classes: HashSet<Class> = vec![Class::Float].into_iter().collect();
+        let classes: Vec<Class> = vec![Class::Float];
 
         // exercise
         let text_value = Value::new(&text_token, &classes);
@@ -278,7 +276,7 @@ mod value_tests {
             separator: false,
             text: float.to_string(),
         };
-        let classes: HashSet<Class> = vec![Class::Float, Class::Integer].into_iter().collect();
+        let classes: Vec<Class> = vec![Class::Integer, Class::Float];
 
         // exercise
         let text_value = Value::new(&text_token, &classes);
@@ -299,7 +297,7 @@ mod parser_tests {
     #[test]
     fn tokenize_value_only() {
         // setup
-        let parser = Parser::new();
+        let parser = Parser::new(Vec::new());
 
         // exercise
         let tokens = parser.tokenize("test");
@@ -317,7 +315,7 @@ mod parser_tests {
     #[test]
     fn tokenize_separator_only() {
         // setup
-        let parser = Parser::new();
+        let parser = Parser::new(Vec::new());
 
         // exercise
         let tokens = parser.tokenize(" ");
@@ -335,7 +333,7 @@ mod parser_tests {
     #[test]
     fn tokenize_separators_only() {
         // setup
-        let parser = Parser::new();
+        let parser = Parser::new(Vec::new());
 
         // exercise
         let tokens = parser.tokenize("  ");
@@ -359,7 +357,7 @@ mod parser_tests {
     #[test]
     fn tokenize_value_separator_value() {
         // setup
-        let parser = Parser::new();
+        let parser = Parser::new(Vec::new());
 
         // exercise
         let tokens = parser.tokenize("a b");
@@ -387,7 +385,7 @@ mod parser_tests {
     #[test]
     fn tokenize_value_separator_separator_value() {
         // setup
-        let parser = Parser::new();
+        let parser = Parser::new(Vec::new());
 
         // exercise
         let tokens = parser.tokenize("a  b");
@@ -419,7 +417,7 @@ mod parser_tests {
     #[test]
     fn tokenize_separator_value_separator() {
         // setup
-        let parser = Parser::new();
+        let parser = Parser::new(Vec::new());
 
         // exercise
         let tokens = parser.tokenize(" a ");
@@ -447,7 +445,7 @@ mod parser_tests {
     #[test]
     fn tokenize_separator_separator_value_separator_separator() {
         // setup
-        let parser = Parser::new();
+        let parser = Parser::new(Vec::new());
 
         // exercise
         let tokens = parser.tokenize("  a  ");
@@ -483,7 +481,7 @@ mod parser_tests {
     #[test]
     fn tokenize_line() {
         // setup
-        let parser = Parser::new();
+        let parser = Parser::new(Vec::new());
 
         // exercise
         let tokens = parser.tokenize("this is a simple line");
@@ -535,10 +533,10 @@ mod parser_tests {
     #[test]
     fn parse_text() {
         // setup
-        let parser = Parser::new();
+        let parser = Parser::new(Vec::new());
 
         // exercise
-        let results = parser.parse("integer 8 and float 5.5", &HashSet::new());
+        let results = parser.parse("integer 8 and float 5.5");
 
         // verify
         assert_eq!(9, results.len());
@@ -615,11 +613,11 @@ mod parser_tests {
     #[test]
     fn parse_integer() {
         // setup
-        let parser = Parser::new();
-        let classes: HashSet<Class> = vec![Class::Integer].into_iter().collect();
+        let classes = vec![Class::Integer];
+        let parser = Parser::new(classes);
 
         // exercise
-        let results = parser.parse("integer 8 and float 5.5", &classes);
+        let results = parser.parse("integer 8 and float 5.5");
 
         // verify
         assert_eq!(9, results.len());
@@ -696,11 +694,11 @@ mod parser_tests {
     #[test]
     fn parse_float() {
         // setup
-        let parser = Parser::new();
-        let classes: HashSet<Class> = vec![Class::Float].into_iter().collect();
+        let classes = vec![Class::Float];
+        let parser = Parser::new(classes);
 
         // exercise
-        let results = parser.parse("integer 8 and float 5.5", &classes);
+        let results = parser.parse("integer 8 and float 5.5");
 
         // verify
         assert_eq!(9, results.len());
@@ -777,11 +775,11 @@ mod parser_tests {
     #[test]
     fn parse_integer_or_float() {
         // setup
-        let parser = Parser::new();
-        let classes: HashSet<Class> = vec![Class::Float, Class::Integer].into_iter().collect();
+        let classes = vec![Class::Integer, Class::Float];
+        let parser = Parser::new(classes);
 
         // exercise
-        let results = parser.parse("integer 8 and float 5.5", &classes);
+        let results = parser.parse("integer 8 and float 5.5");
 
         // verify
         assert_eq!(9, results.len());

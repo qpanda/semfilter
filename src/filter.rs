@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::error::Error;
 use std::io::{BufRead, BufReader, LineWriter, Read, Write};
 
@@ -25,7 +24,7 @@ impl<'a> Filter<'a> {
                 Err(error) => return Err(error.into()), // TODO add flag to allow continue on error or fail
             };
 
-            let results = self.parser.parse(&line, &HashSet::new());
+            let results = self.parser.parse(&line);
             let t: String = results
                 .into_iter()
                 .map(|r: (Token, Value)| r.0.text)
@@ -71,7 +70,7 @@ mod tests {
         let mut input_file = input.reopen().unwrap();
         let mut output_file = output.reopen().unwrap();
 
-        let parser = Parser::new();
+        let parser = Parser::new(Vec::new());
         let filter = Filter::new(&parser);
 
         // exercise
@@ -94,7 +93,7 @@ mod tests {
         writeln!(input_file, "lorem ipsum dolor sit amet consectetuer").unwrap();
         let mut input_file = input.reopen().unwrap();
 
-        let parser = Parser::new();
+        let parser = Parser::new(Vec::new());
         let filter = Filter::new(&parser);
 
         // exercise

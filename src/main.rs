@@ -14,7 +14,8 @@ fn main() {
     let mut input = File::open("test.txt").unwrap(); // TODO error handling
     let mut output = stdout();
 
-    let parser = Parser::new();
+    let classes = Vec::new();
+    let parser = Parser::new(classes);
     let filter = Filter::new(&parser);
     filter.filter(&mut input, &mut output).unwrap(); // TODO error handling
 }
