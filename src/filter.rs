@@ -1,17 +1,15 @@
 use std::error::Error;
 use std::io::{BufRead, BufReader, LineWriter, Read, Write};
 
-use crate::parser::Parser;
-use crate::parser::Token;
-use crate::parser::Value;
+use crate::tokenizer::Tokenizer;
 
 pub struct Filter<'a> {
-    parser: &'a Parser,
+    tokenizer: &'a Tokenizer,
 }
 
 impl<'a> Filter<'a> {
-    pub fn new(parser: &'a Parser) -> Self {
-        Filter { parser: parser }
+    pub fn new(tokenizer: &'a Tokenizer) -> Self {
+        Filter { tokenizer: tokenizer }
     }
 
     pub fn filter(&self, read: &mut dyn Read, write: &mut dyn Write) -> Result<usize, Box<dyn Error>> {
@@ -24,28 +22,10 @@ impl<'a> Filter<'a> {
                 Err(error) => return Err(error.into()), // TODO add flag to allow continue on error or fail
             };
 
-            let results = self.parser.parse(&line);
-            let t: String = results
-                .into_iter()
-                .map(|r: (Token, Value)| r.0.text)
-                .collect::<String>();
+            let tokens = self.tokenizer.tokens(&line);
+            let text: String = tokens.into_iter().map(|r| r.text).collect::<String>();
 
-            // let x = tokens.into_iter().collect();
-            // TODO 1. parse line
-            // TODO 2. check match
-            // TODO 3. output matching line
-            // OPTION 1
-            // tokens = parse(line)
-            // if match(tokens) {
-            //   print(tokens)
-            // }
-            // OPTION 2
-            // parsed_line = parse(line)
-            // if parsed_line.match() {
-            //   print(parsed_line)
-            // }
-
-            writer.write_all(t.as_bytes())?;
+            writer.write_all(text.as_bytes())?;
             writer.write_all(b"\n")?;
             lines += 1;
         }
@@ -70,8 +50,8 @@ mod tests {
         let mut input_file = input.reopen().unwrap();
         let mut output_file = output.reopen().unwrap();
 
-        let parser = Parser::new(Vec::new());
-        let filter = Filter::new(&parser);
+        let tokenizer = Tokenizer::new();
+        let filter = Filter::new(&tokenizer);
 
         // exercise
         let lines = filter.filter(&mut input_file, &mut output_file).unwrap();
@@ -93,8 +73,8 @@ mod tests {
         writeln!(input_file, "lorem ipsum dolor sit amet consectetuer").unwrap();
         let mut input_file = input.reopen().unwrap();
 
-        let parser = Parser::new(Vec::new());
-        let filter = Filter::new(&parser);
+        let tokenizer = Tokenizer::new();
+        let filter = Filter::new(&tokenizer);
 
         // exercise
         let lines = filter.filter(&mut input_file, &mut output_file).unwrap();
