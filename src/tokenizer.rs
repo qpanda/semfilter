@@ -1,6 +1,8 @@
+pub type Position = usize;
+
 #[derive(Debug, PartialEq)]
 pub struct Token {
-    pub position: usize,
+    pub position: Position,
     pub separator: bool,
     pub text: String, // TODO could make this a &str to improve performance
 }

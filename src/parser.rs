@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use crate::tokenizer::Position;
 use crate::tokenizer::Token;
 
 pub enum Class {
@@ -30,7 +31,7 @@ impl Value {
         }
     }
 
-    pub fn from(tokens: &Vec<Token>, class: &Class) -> Vec<(usize, Value)> {
+    pub fn from(tokens: &Vec<Token>, class: &Class) -> Vec<(Position, Value)> {
         let mut result = Vec::new();
         for token in tokens {
             if !token.separator {
