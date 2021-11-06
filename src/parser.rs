@@ -18,8 +18,8 @@ pub enum Value {
 
 #[derive(Debug, PartialEq)]
 pub struct Term {
-    position: Position,
-    value: Value,
+    pub position: Position,
+    pub value: Value,
 }
 
 impl Value {

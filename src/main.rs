@@ -1,3 +1,4 @@
+mod expression;
 mod filter;
 mod parser;
 mod tokenizer;
