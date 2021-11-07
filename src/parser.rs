@@ -9,7 +9,7 @@ pub enum Class {
     Text,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, PartialOrd)]
 pub enum Value {
     Integer(u64),
     Float(f64),
