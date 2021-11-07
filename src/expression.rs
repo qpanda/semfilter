@@ -13,19 +13,17 @@ peg::parser!(grammar expression() for str {
 
     // TODO return matching positions as set
     rule evaluate(tokens: &Vec<Token>) -> bool
-        = class:class() " == " text:text() {
-            // TODO move next 3-4 lines into helper function
-            let value = Value::new(&text, &class).unwrap(); // TODO error handling, how do we communicate error back?
+        = class:class() " == " text:text() {?
+            let value = Value::new(&text, &class).map_err(|error| "failed to convert")?;
             let terms = Term::from(tokens, &class);
             let positions = Evaluator::positions(&terms, |term| term.value == value);
-            return positions.len() != 0;
+            return Ok(positions.len() != 0);
         }
-        / class:class() " != " text:text() {
-            // TODO move next 3-4 lines into helper function
-            let value = Value::new(&text, &class).unwrap(); // TODO error handling, how do we communicate error back?
+        / class:class() " != " text:text() {?
+            let value = Value::new(&text, &class).map_err(|error| "failed to convert")?;
             let terms = Term::from(tokens, &class);
             let positions = Evaluator::positions(&terms, |term| term.value != value);
-            return positions.len() != 0;
+            return Ok(positions.len() != 0);
         }
 
     rule class() -> Class
@@ -35,7 +33,7 @@ peg::parser!(grammar expression() for str {
 
     rule text() -> String
         // TODO generalize expression (everything between separators as per Tokenizer)
-        = (n:$(['0'..='9']+) {
+        = (n:$(['a'..='z' | '0'..='9']+) {
             return String::from(n);
         })
 });
@@ -43,7 +41,7 @@ peg::parser!(grammar expression() for str {
 struct Evaluator {}
 
 impl Evaluator {
-    pub fn positions<P>(terms: &Vec<Term>, predicate: P) -> Vec<Position>
+    fn positions<P>(terms: &Vec<Term>, predicate: P) -> Vec<Position>
     where
         P: FnMut(&&Term) -> bool,
     {

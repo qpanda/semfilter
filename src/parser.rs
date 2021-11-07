@@ -23,6 +23,7 @@ pub struct Term {
 }
 
 impl Value {
+    // TODO consider renaming to Value::from
     pub fn new(text: &String, class: &Class) -> Result<Self, Box<dyn Error>> {
         match class {
             Class::Integer => match text.parse::<u64>() {
