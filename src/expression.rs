@@ -8,6 +8,7 @@ use crate::tokenizer::Token;
 
 peg::parser!(grammar expression() for str {
     // TODO return matching positions as set
+    // TODO probably don't need test, can make evaluate pub
     pub rule test(tokens: &Vec<Token>) -> Vec<Position>
         = evaluate(tokens)
 
@@ -27,17 +28,48 @@ peg::parser!(grammar expression() for str {
             let positions = Evaluator::positions(&terms, |term| term.value != value);
             return Ok(positions);
         }
+        / class:class() " > " text:text() {?
+            // TODO find way to return more detailed error message
+            let value = Value::new(&text, &class).map_err(|error| "failed to convert")?;
+            let terms = Term::from(tokens, &class);
+            let positions = Evaluator::positions(&terms, |term| term.value > value);
+            return Ok(positions);
+        }
+        / class:class() " >= " text:text() {?
+            // TODO find way to return more detailed error message
+            let value = Value::new(&text, &class).map_err(|error| "failed to convert")?;
+            let terms = Term::from(tokens, &class);
+            let positions = Evaluator::positions(&terms, |term| term.value >= value);
+            return Ok(positions);
+        }
+        / class:class() " < " text:text() {?
+            // TODO find way to return more detailed error message
+            let value = Value::new(&text, &class).map_err(|error| "failed to convert")?;
+            let terms = Term::from(tokens, &class);
+            let positions = Evaluator::positions(&terms, |term| term.value < value);
+            return Ok(positions);
+        }
+        / class:class() " <= " text:text() {?
+            // TODO find way to return more detailed error message
+            let value = Value::new(&text, &class).map_err(|error| "failed to convert")?;
+            let terms = Term::from(tokens, &class);
+            let positions = Evaluator::positions(&terms, |term| term.value <= value);
+            return Ok(positions);
+        }
 
+    // TODO break this down into one rule per class so that we can use individual rules in evaluate
     rule class() -> Class
         = "integer" { return Class::Integer }
         / "float" { return Class::Float }
         / "text" { return Class::Text }
+        / expected!("class")
 
     rule text() -> String
         // TODO generalize expression (everything between separators as per Tokenizer)
         = (n:$(['a'..='z' | '0'..='9']+) {
             return String::from(n);
         })
+        / expected!("text")
 });
 
 struct Evaluator {}
