@@ -8,22 +8,24 @@ use crate::tokenizer::Token;
 
 peg::parser!(grammar expression() for str {
     // TODO return matching positions as set
-    pub rule test(tokens: &Vec<Token>) -> bool
+    pub rule test(tokens: &Vec<Token>) -> Vec<Position>
         = evaluate(tokens)
 
     // TODO return matching positions as set
-    rule evaluate(tokens: &Vec<Token>) -> bool
+    rule evaluate(tokens: &Vec<Token>) -> Vec<Position>
         = class:class() " == " text:text() {?
+            // TODO find way to return more detailed error message
             let value = Value::new(&text, &class).map_err(|error| "failed to convert")?;
             let terms = Term::from(tokens, &class);
             let positions = Evaluator::positions(&terms, |term| term.value == value);
-            return Ok(positions.len() != 0);
+            return Ok(positions);
         }
         / class:class() " != " text:text() {?
+            // TODO find way to return more detailed error message
             let value = Value::new(&text, &class).map_err(|error| "failed to convert")?;
             let terms = Term::from(tokens, &class);
             let positions = Evaluator::positions(&terms, |term| term.value != value);
-            return Ok(positions.len() != 0);
+            return Ok(positions);
         }
 
     rule class() -> Class
@@ -64,8 +66,8 @@ mod tests_expression {
             separator: false,
             text: String::from("9"),
         }];
-        assert_eq!(expression::test("integer == 9", &tokens), Ok(true));
-        assert_eq!(expression::test("integer != 9", &tokens), Ok(false));
+        assert_eq!(expression::test("integer == 9", &tokens), Ok(vec![0]));
+        assert_eq!(expression::test("integer != 9", &tokens), Ok(vec![]));
     }
 }
 
