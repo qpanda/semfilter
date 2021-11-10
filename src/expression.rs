@@ -1,5 +1,7 @@
 extern crate peg;
 
+use std::collections::HashSet;
+
 use crate::parser::Class;
 use crate::parser::Term;
 use crate::parser::Value;
@@ -7,13 +9,10 @@ use crate::tokenizer::Position;
 use crate::tokenizer::Token;
 
 peg::parser!(grammar expression() for str {
-    // TODO return matching positions as set
-    // TODO probably don't need test, can make evaluate pub
-    pub rule evaluate(tokens: &Vec<Token>) -> Vec<Position>
+    pub rule evaluate(tokens: &Vec<Token>) -> HashSet<Position>
         = condition(tokens)
 
-    // TODO return matching positions as set
-    rule condition(tokens: &Vec<Token>) -> Vec<Position>
+    rule condition(tokens: &Vec<Token>) -> HashSet<Position>
         = integer_condition(tokens)
         / float_condition(tokens)
         / text_condition(tokens)
@@ -21,7 +20,7 @@ peg::parser!(grammar expression() for str {
     //
     // conditions
     //
-    rule integer_condition(tokens: &Vec<Token>) -> Vec<Position>
+    rule integer_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = integers:integers(tokens) " == " integer:integer() { matching_positions(&integers, |term| term.value == integer) }
     / integers:integers(tokens) " != " integer:integer() { matching_positions(&integers, |term| term.value != integer) }
     / integers:integers(tokens) " > " integer:integer() { matching_positions(&integers, |term| term.value > integer) }
@@ -29,7 +28,7 @@ peg::parser!(grammar expression() for str {
     / integers:integers(tokens) " < " integer:integer() { matching_positions(&integers, |term| term.value < integer) }
     / integers:integers(tokens) " <= " integer:integer() { matching_positions(&integers, |term| term.value <= integer) }
 
-    rule float_condition(tokens: &Vec<Token>) -> Vec<Position>
+    rule float_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = floats:floats(tokens) " == " float:float() { matching_positions(&floats, |term| term.value == float) }
     / floats:floats(tokens) " != " float:float() { matching_positions(&floats, |term| term.value != float) }
     / floats:floats(tokens) " > " float:float() { matching_positions(&floats, |term| term.value > float) }
@@ -37,7 +36,7 @@ peg::parser!(grammar expression() for str {
     / floats:floats(tokens) " < " float:float() { matching_positions(&floats, |term| term.value < float) }
     / floats:floats(tokens) " <= " float:float() { matching_positions(&floats, |term| term.value <= float) }
 
-    rule text_condition(tokens: &Vec<Token>) -> Vec<Position>
+    rule text_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = texts:texts(tokens) " == " text:text() { matching_positions(&texts, |term| term.value == text) }
     / texts:texts(tokens) " != " text:text() { matching_positions(&texts, |term| term.value != text) }
     / texts:texts(tokens) " > " text:text() { matching_positions(&texts, |term| term.value > text) }
@@ -79,7 +78,7 @@ peg::parser!(grammar expression() for str {
         }
 });
 
-fn matching_positions<P>(terms: &Vec<Term>, predicate: P) -> Vec<Position>
+fn matching_positions<P>(terms: &Vec<Term>, predicate: P) -> HashSet<Position>
 where
     P: FnMut(&&Term) -> bool,
 {
@@ -87,7 +86,7 @@ where
         .into_iter()
         .filter(predicate)
         .map(|term| term.position)
-        .collect::<Vec<Position>>()
+        .collect::<HashSet<Position>>()
 }
 
 #[cfg(test)]
@@ -124,15 +123,15 @@ mod tests {
         let integers_eq_text_2 = matching_positions(&integers, |term| term.value > Value::Text(String::from("2")));
 
         // verify
-        assert_eq!(0, integers_eq_integer_0.len());
-        assert_eq!(vec![4], integers_eq_integer_2);
-        assert_eq!(vec![2, 4, 6], integeres_ne_integer_0);
-        assert_eq!(vec![2, 6], integers_ne_integer_2);
-        assert_eq!(vec![2, 4, 6], integers_gt_integer_0);
-        assert_eq!(0, integers_lt_integer_0.len());
-        assert_eq!(0, integers_eq_float_2.len());
-        assert_eq!(0, integers_gt_float_0.len());
-        assert_eq!(0, integers_eq_text_2.len());
+        assert_eq!(HashSet::from([]), integers_eq_integer_0);
+        assert_eq!(HashSet::from([4]), integers_eq_integer_2);
+        assert_eq!(HashSet::from([2, 4, 6]), integeres_ne_integer_0);
+        assert_eq!(HashSet::from([2, 6]), integers_ne_integer_2);
+        assert_eq!(HashSet::from([2, 4, 6]), integers_gt_integer_0);
+        assert_eq!(HashSet::from([]), integers_lt_integer_0);
+        assert_eq!(HashSet::from([]), integers_eq_float_2);
+        assert_eq!(HashSet::from([]), integers_gt_float_0);
+        assert_eq!(HashSet::from([]), integers_eq_text_2);
     }
 
     #[test]
@@ -154,9 +153,9 @@ mod tests {
 
     #[test]
     fn evaluate_expression_no_tokens() {
-        assert_eq!(expression::evaluate("integer == 9", &vec![]), Ok(vec![]));
-        assert_eq!(expression::evaluate("integer != 9", &vec![]), Ok(vec![]));
-        assert_eq!(expression::evaluate("float > 1.0", &vec![]), Ok(vec![]));
+        assert_eq!(expression::evaluate("integer == 9", &vec![]), Ok(HashSet::new()));
+        assert_eq!(expression::evaluate("integer != 9", &vec![]), Ok(HashSet::new()));
+        assert_eq!(expression::evaluate("float > 1.0", &vec![]), Ok(HashSet::new()));
     }
 
     #[test]
@@ -180,14 +179,14 @@ mod tests {
             },
         ];
 
-        assert_eq!(expression::evaluate("integer == 9", &tokens), Ok(vec![1]));
-        assert_eq!(expression::evaluate("integer != 9", &tokens), Ok(vec![]));
-        assert_eq!(expression::evaluate("float == 5.5", &tokens), Ok(vec![2]));
-        assert_eq!(expression::evaluate("float != 5.5", &tokens), Ok(vec![1]));
-        assert_eq!(expression::evaluate("float > 0.0", &tokens), Ok(vec![1, 2]));
-        assert_eq!(expression::evaluate("float < 0.0", &tokens), Ok(vec![]));
-        assert_eq!(expression::evaluate("text == a1", &tokens), Ok(vec![0]));
-        assert_eq!(expression::evaluate("text != a1", &tokens), Ok(vec![1, 2]));
-        assert_eq!(expression::evaluate("text == b1", &tokens), Ok(vec![]));
+        assert_eq!(expression::evaluate("integer == 9", &tokens), Ok(HashSet::from([1])));
+        assert_eq!(expression::evaluate("integer != 9", &tokens), Ok(HashSet::from([])));
+        assert_eq!(expression::evaluate("float == 5.5", &tokens), Ok(HashSet::from([2])));
+        assert_eq!(expression::evaluate("float != 5.5", &tokens), Ok(HashSet::from([1])));
+        assert_eq!(expression::evaluate("float > 0.0", &tokens), Ok(HashSet::from([1, 2])));
+        assert_eq!(expression::evaluate("float < 0.0", &tokens), Ok(HashSet::from([])));
+        assert_eq!(expression::evaluate("text == a1", &tokens), Ok(HashSet::from([0])));
+        assert_eq!(expression::evaluate("text != a1", &tokens), Ok(HashSet::from([1, 2])));
+        assert_eq!(expression::evaluate("text == b1", &tokens), Ok(HashSet::from([])));
     }
 }
