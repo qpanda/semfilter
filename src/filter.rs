@@ -7,27 +7,33 @@ pub struct Filter<'a> {
     tokenizer: &'a Tokenizer,
 }
 
+pub struct Lines {
+    processed: usize,
+    matched: usize,
+}
+
 impl<'a> Filter<'a> {
     pub fn new(tokenizer: &'a Tokenizer) -> Self {
         Filter { tokenizer: tokenizer }
     }
 
-    pub fn filter(&self, read: &mut dyn Read, write: &mut dyn Write) -> Result<usize, Box<dyn Error>> {
+    pub fn filter(&self, read: &mut dyn Read, write: &mut dyn Write) -> Result<Lines, Box<dyn Error>> {
+        let mut lines = Lines {
+            processed: 0,
+            matched: 0,
+        };
+
         let reader = BufReader::new(read);
         let mut writer = LineWriter::new(write);
-        let mut lines = 0;
         for line in reader.lines() {
-            let line = match line {
-                Ok(line) => line,
-                Err(error) => return Err(error.into()), // TODO add flag to allow continue on error or fail
-            };
-
+            let line = line?;
             let tokens = self.tokenizer.tokens(&line);
             let text: String = tokens.into_iter().map(|r| r.text).collect::<String>();
 
             writer.write_all(text.as_bytes())?;
             writer.write_all(b"\n")?;
-            lines += 1;
+            lines.processed += 1;
+            lines.matched += 1;
         }
 
         writer.flush()?;
@@ -59,7 +65,8 @@ mod tests {
         // verify
         let mut input_file = input.reopen().unwrap();
         let mut output_file = output.reopen().unwrap();
-        assert_eq!(0, lines);
+        assert_eq!(0, lines.processed);
+        assert_eq!(0, lines.matched);
         assert!(diff_files(&mut input_file, &mut output_file));
     }
 
@@ -82,7 +89,8 @@ mod tests {
         // verify
         let mut input_file = input.reopen().unwrap();
         let mut output_file = output.reopen().unwrap();
-        assert_eq!(1, lines);
+        assert_eq!(1, lines.processed);
+        assert_eq!(1, lines.matched);
         assert!(diff_files(&mut input_file, &mut output_file));
     }
 }
