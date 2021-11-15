@@ -17,6 +17,7 @@ fn main() {
     let mut output = stdout();
 
     let tokenizer = Tokenizer::new();
-    let filter = Filter::new(&tokenizer);
+    let expression = "integer == 9";
+    let filter = Filter::new(&tokenizer, expression).unwrap(); // TODO error handling
     filter.filter(&mut input, &mut output).unwrap(); // TODO error handling
 }

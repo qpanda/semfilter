@@ -8,7 +8,7 @@ use crate::parser::Value;
 use crate::tokenizer::Position;
 use crate::tokenizer::Token;
 
-peg::parser!(grammar expression() for str {
+peg::parser!(pub grammar expression() for str {
     pub rule evaluate(tokens: &Vec<Token>) -> HashSet<Position>
         = condition(tokens)
 
@@ -62,19 +62,19 @@ peg::parser!(grammar expression() for str {
     // TODO check internet for correct pattern for integers
     rule integer() -> Value
         = n:$(['0'..='9']+) {?
-            Value::new(&String::from(n), &Class::Integer).map_err(|error| "failed to parse integer")
+            Value::new(&String::from(n), &Class::Integer).map_err(|_| "failed to parse integer")
         }
 
     // TODO check internet for correct pattern for floats
     rule float() -> Value
         = n:$(['0'..='9']+"."['0'..='9']+) {?
-            Value::new(&String::from(n), &Class::Float).map_err(|error| "failed to parse float")
+            Value::new(&String::from(n), &Class::Float).map_err(|_| "failed to parse float")
         }
 
     // TODO is identifier, do we want general text?
     rule text() -> Value
         = n:$(['a'..='z'|'A'..='Z']['a'..='z'|'A'..='Z'|'0'..='9']+) {?
-            Value::new(&String::from(n), &Class::Text).map_err(|error| "failed to parse text")
+            Value::new(&String::from(n), &Class::Text).map_err(|_| "failed to parse text")
         }
 });
 
