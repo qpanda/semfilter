@@ -1,3 +1,4 @@
+use ansi_term::Colour;
 use std::collections::HashSet;
 use std::error::Error;
 use std::io::{BufRead, BufReader, LineWriter, Read, Write};
@@ -7,11 +8,13 @@ use crate::tokenizer::Position;
 use crate::tokenizer::Token;
 use crate::tokenizer::Tokenizer;
 
+pub const DEFAULT_MODE: Mode = Mode::FilterHighlight(Colour::Red);
+
 #[derive(PartialEq)]
 pub enum Mode {
-    Highlight,
     Filter,
-    FilterHighlight,
+    Highlight(Colour),
+    FilterHighlight(Colour),
 }
 
 pub struct Filter<'a> {
@@ -68,14 +71,14 @@ impl<'a> Filter<'a> {
     // TODO consider returning Option<&str>
     fn output_line(&self, tokens: Vec<Token>, positions: &HashSet<Position>) -> Option<String> {
         match self.mode {
-            Mode::Highlight => Some(self.highlighted_text(tokens, positions)),
             Mode::Filter => match positions.is_empty() {
                 true => None,
                 false => Some(self.normal_text(tokens)),
             },
-            Mode::FilterHighlight => match positions.is_empty() {
+            Mode::Highlight(colour) => Some(self.highlighted_text(tokens, positions, colour)),
+            Mode::FilterHighlight(colour) => match positions.is_empty() {
                 true => None,
-                false => Some(self.highlighted_text(tokens, positions)),
+                false => Some(self.highlighted_text(tokens, positions, colour)),
             },
         }
     }
@@ -86,11 +89,11 @@ impl<'a> Filter<'a> {
     }
 
     // TODO consider returning Option<&str>
-    fn highlighted_text(&self, tokens: Vec<Token>, positions: &HashSet<Position>) -> String {
+    fn highlighted_text(&self, tokens: Vec<Token>, positions: &HashSet<Position>, colour: Colour) -> String {
         tokens
             .into_iter()
             .map(|t| match positions.contains(&t.position) {
-                true => t.text, // TODO add color/highlight
+                true => colour.paint(t.text).to_string(),
                 false => t.text,
             })
             .collect::<String>()
@@ -130,6 +133,8 @@ mod tests {
     #[test]
     fn highlight_matched() {
         // setup
+        let colour = Colour::Red;
+
         let input_text = "lorem ipsum dolor sit amet consectetuer";
         let mut input_file = NamedTempFile::new().unwrap();
         writeln!(input_file, "{}", input_text).unwrap();
@@ -138,19 +143,23 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
+        let expected_text = format!("lorem {} dolor sit amet consectetuer", colour.paint("ipsum"));
+        let mut expected_file = NamedTempFile::new().unwrap();
+        writeln!(expected_file, "{}", expected_text).unwrap();
+
         let tokenizer = Tokenizer::new();
         let expression = "text == ipsum";
-        let filter = Filter::new(&tokenizer, expression, Mode::Highlight).unwrap();
+        let filter = Filter::new(&tokenizer, expression, Mode::Highlight(colour)).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
 
         // verify
-        let mut input = input_file.reopen().unwrap();
+        let mut expected = expected_file.reopen().unwrap();
         let mut output = output_file.reopen().unwrap();
         assert_eq!(1, lines.processed);
         assert_eq!(1, lines.matched);
-        assert!(diff_files(&mut input, &mut output));
+        assert!(diff_files(&mut expected, &mut output));
     }
 
     #[test]
@@ -166,7 +175,7 @@ mod tests {
 
         let tokenizer = Tokenizer::new();
         let expression = "text == abc";
-        let filter = Filter::new(&tokenizer, expression, Mode::Highlight).unwrap();
+        let filter = Filter::new(&tokenizer, expression, Mode::Highlight(Colour::Red)).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -234,6 +243,8 @@ mod tests {
     #[test]
     fn filter_highlight_matched() {
         // setup
+        let colour = Colour::Red;
+
         let input_text = "lorem ipsum dolor sit amet consectetuer";
         let mut input_file = NamedTempFile::new().unwrap();
         writeln!(input_file, "{}", input_text).unwrap();
@@ -242,19 +253,23 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
+        let expected_text = format!("lorem {} dolor sit amet consectetuer", colour.paint("ipsum"));
+        let mut expected_file = NamedTempFile::new().unwrap();
+        writeln!(expected_file, "{}", expected_text).unwrap();
+
         let tokenizer = Tokenizer::new();
         let expression = "text == ipsum";
-        let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight).unwrap();
+        let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(colour)).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
 
         // verify
-        let mut input = input_file.reopen().unwrap();
+        let mut expected = expected_file.reopen().unwrap();
         let mut output = output_file.reopen().unwrap();
         assert_eq!(1, lines.processed);
         assert_eq!(1, lines.matched);
-        assert!(diff_files(&mut input, &mut output));
+        assert!(diff_files(&mut expected, &mut output));
     }
 
     #[test]
@@ -270,7 +285,7 @@ mod tests {
 
         let tokenizer = Tokenizer::new();
         let expression = "text == abc";
-        let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight).unwrap();
+        let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(Colour::Red)).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();

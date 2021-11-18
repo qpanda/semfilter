@@ -7,7 +7,6 @@ use std::fs::File;
 use std::io::stdout;
 
 use crate::filter::Filter;
-use crate::filter::Mode;
 use crate::tokenizer::Tokenizer;
 
 // TODO parameters --separator with values "[:space:]", ",", ...
@@ -19,6 +18,6 @@ fn main() {
 
     let tokenizer = Tokenizer::new();
     let expression = "integer == 9";
-    let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight).unwrap(); // TODO error handling
+    let filter = Filter::new(&tokenizer, expression, filter::DEFAULT_MODE).unwrap(); // TODO error handling
     filter.filter(&mut input, &mut output).unwrap(); // TODO error handling
 }
