@@ -106,173 +106,180 @@ mod tests {
     #[test]
     fn empty() {
         // setup
-        let input = NamedTempFile::new().unwrap();
-        let output = NamedTempFile::new().unwrap();
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
+        let input_file = NamedTempFile::new().unwrap();
+        let mut input = input_file.reopen().unwrap();
+
+        let output_file = NamedTempFile::new().unwrap();
+        let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
         let expression = "integer == 9";
         let filter = Filter::new(&tokenizer, expression, Mode::Filter).unwrap();
 
         // exercise
-        let lines = filter.filter(&mut input_file, &mut output_file).unwrap();
+        let lines = filter.filter(&mut input, &mut output).unwrap();
 
         // verify
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
+        let mut input = input_file.reopen().unwrap();
+        let mut output = output_file.reopen().unwrap();
         assert_eq!(0, lines.processed);
         assert_eq!(0, lines.matched);
-        assert!(diff_files(&mut input_file, &mut output_file));
+        assert!(diff_files(&mut input, &mut output));
     }
 
     #[test]
     fn highlight_matched() {
         // setup
-        let input = NamedTempFile::new().unwrap();
-        let output = NamedTempFile::new().unwrap();
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
-        writeln!(input_file, "lorem ipsum dolor sit amet consectetuer").unwrap();
-        let mut input_file = input.reopen().unwrap();
+        let input_text = "lorem ipsum dolor sit amet consectetuer";
+        let mut input_file = NamedTempFile::new().unwrap();
+        writeln!(input_file, "{}", input_text).unwrap();
+        let mut input = input_file.reopen().unwrap();
+
+        let output_file = NamedTempFile::new().unwrap();
+        let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
         let expression = "text == ipsum";
         let filter = Filter::new(&tokenizer, expression, Mode::Highlight).unwrap();
 
         // exercise
-        let lines = filter.filter(&mut input_file, &mut output_file).unwrap();
+        let lines = filter.filter(&mut input, &mut output).unwrap();
 
         // verify
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
+        let mut input = input_file.reopen().unwrap();
+        let mut output = output_file.reopen().unwrap();
         assert_eq!(1, lines.processed);
         assert_eq!(1, lines.matched);
-        assert!(diff_files(&mut input_file, &mut output_file));
+        assert!(diff_files(&mut input, &mut output));
     }
 
     #[test]
     fn highlight_unmatched() {
         // setup
-        let input = NamedTempFile::new().unwrap();
-        let output = NamedTempFile::new().unwrap();
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
-        writeln!(input_file, "lorem ipsum dolor sit amet consectetuer").unwrap();
-        let mut input_file = input.reopen().unwrap();
+        let input_text = "lorem ipsum dolor sit amet consectetuer";
+        let mut input_file = NamedTempFile::new().unwrap();
+        writeln!(input_file, "{}", input_text).unwrap();
+        let mut input = input_file.reopen().unwrap();
+
+        let output_file = NamedTempFile::new().unwrap();
+        let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
         let expression = "text == abc";
         let filter = Filter::new(&tokenizer, expression, Mode::Highlight).unwrap();
 
         // exercise
-        let lines = filter.filter(&mut input_file, &mut output_file).unwrap();
+        let lines = filter.filter(&mut input, &mut output).unwrap();
 
         // verify
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
+        let mut input = input_file.reopen().unwrap();
+        let mut output = output_file.reopen().unwrap();
         assert_eq!(1, lines.processed);
         assert_eq!(0, lines.matched);
-        assert!(diff_files(&mut input_file, &mut output_file));
+        assert!(diff_files(&mut input, &mut output));
     }
 
     #[test]
     fn filter_matched() {
         // setup
-        let input = NamedTempFile::new().unwrap();
-        let output = NamedTempFile::new().unwrap();
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
-        writeln!(input_file, "lorem ipsum dolor sit amet consectetuer").unwrap();
-        let mut input_file = input.reopen().unwrap();
+        let input_text = "lorem ipsum dolor sit amet consectetuer";
+        let mut input_file = NamedTempFile::new().unwrap();
+        writeln!(input_file, "{}", input_text).unwrap();
+        let mut input = input_file.reopen().unwrap();
+
+        let output_file = NamedTempFile::new().unwrap();
+        let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
         let expression = "text == ipsum";
         let filter = Filter::new(&tokenizer, expression, Mode::Filter).unwrap();
 
         // exercise
-        let lines = filter.filter(&mut input_file, &mut output_file).unwrap();
+        let lines = filter.filter(&mut input, &mut output).unwrap();
 
         // verify
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
+        let mut input = input_file.reopen().unwrap();
+        let mut output = output_file.reopen().unwrap();
         assert_eq!(1, lines.processed);
         assert_eq!(1, lines.matched);
-        assert!(diff_files(&mut input_file, &mut output_file));
+        assert!(diff_files(&mut input, &mut output));
     }
 
     #[test]
     fn filter_unmatched() {
         // setup
-        let input = NamedTempFile::new().unwrap();
-        let output = NamedTempFile::new().unwrap();
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
-        writeln!(input_file, "lorem ipsum dolor sit amet consectetuer").unwrap();
-        let mut input_file = input.reopen().unwrap();
+        let input_text = "lorem ipsum dolor sit amet consectetuer";
+        let mut input_file = NamedTempFile::new().unwrap();
+        writeln!(input_file, "{}", input_text).unwrap();
+        let mut input = input_file.reopen().unwrap();
+
+        let output_file = NamedTempFile::new().unwrap();
+        let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
         let expression = "text == abc";
         let filter = Filter::new(&tokenizer, expression, Mode::Filter).unwrap();
 
         // exercise
-        let lines = filter.filter(&mut input_file, &mut output_file).unwrap();
+        let lines = filter.filter(&mut input, &mut output).unwrap();
 
         // verify
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
+        let mut input = input_file.reopen().unwrap();
+        let mut output = output_file.reopen().unwrap();
         assert_eq!(1, lines.processed);
         assert_eq!(0, lines.matched);
-        assert!(!diff_files(&mut input_file, &mut output_file));
+        assert!(!diff_files(&mut input, &mut output));
     }
 
     #[test]
     fn filter_highlight_matched() {
         // setup
-        let input = NamedTempFile::new().unwrap();
-        let output = NamedTempFile::new().unwrap();
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
-        writeln!(input_file, "lorem ipsum dolor sit amet consectetuer").unwrap();
-        let mut input_file = input.reopen().unwrap();
+        let input_text = "lorem ipsum dolor sit amet consectetuer";
+        let mut input_file = NamedTempFile::new().unwrap();
+        writeln!(input_file, "{}", input_text).unwrap();
+        let mut input = input_file.reopen().unwrap();
+
+        let output_file = NamedTempFile::new().unwrap();
+        let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
         let expression = "text == ipsum";
         let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight).unwrap();
 
         // exercise
-        let lines = filter.filter(&mut input_file, &mut output_file).unwrap();
+        let lines = filter.filter(&mut input, &mut output).unwrap();
 
         // verify
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
+        let mut input = input_file.reopen().unwrap();
+        let mut output = output_file.reopen().unwrap();
         assert_eq!(1, lines.processed);
         assert_eq!(1, lines.matched);
-        assert!(diff_files(&mut input_file, &mut output_file));
+        assert!(diff_files(&mut input, &mut output));
     }
 
     #[test]
     fn filter_highlight_unmatched() {
         // setup
-        let input = NamedTempFile::new().unwrap();
-        let output = NamedTempFile::new().unwrap();
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
-        writeln!(input_file, "lorem ipsum dolor sit amet consectetuer").unwrap();
-        let mut input_file = input.reopen().unwrap();
+        let input_text = "lorem ipsum dolor sit amet consectetuer";
+        let mut input_file = NamedTempFile::new().unwrap();
+        writeln!(input_file, "{}", input_text).unwrap();
+        let mut input = input_file.reopen().unwrap();
+
+        let output_file = NamedTempFile::new().unwrap();
+        let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
         let expression = "text == abc";
         let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight).unwrap();
 
         // exercise
-        let lines = filter.filter(&mut input_file, &mut output_file).unwrap();
+        let lines = filter.filter(&mut input, &mut output).unwrap();
 
         // verify
-        let mut input_file = input.reopen().unwrap();
-        let mut output_file = output.reopen().unwrap();
+        let mut input = input_file.reopen().unwrap();
+        let mut output = output_file.reopen().unwrap();
         assert_eq!(1, lines.processed);
         assert_eq!(0, lines.matched);
-        assert!(!diff_files(&mut input_file, &mut output_file));
+        assert!(!diff_files(&mut input, &mut output));
     }
 }
