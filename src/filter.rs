@@ -51,13 +51,13 @@ impl<'a> Filter<'a> {
         for input_line in reader.lines() {
             let input_line = input_line?;
             let tokens = self.tokenizer.tokens(&input_line);
-            let positions = expression::evaluate(self.expression, &tokens)?;
-            if let Some(output_line) = self.output_line(tokens, &positions) {
+            let matches = expression::evaluate(self.expression, &tokens)?;
+            if let Some(output_line) = self.output_line(tokens, &matches) {
                 writer.write_all(output_line.as_bytes())?;
                 writer.write_all(b"\n")?;
             }
 
-            if !positions.is_empty() {
+            if !matches.is_empty() {
                 lines.matched += 1;
             }
             lines.processed += 1;
@@ -69,16 +69,16 @@ impl<'a> Filter<'a> {
     }
 
     // TODO consider returning Option<&str>
-    fn output_line(&self, tokens: Vec<Token>, positions: &HashSet<Position>) -> Option<String> {
+    fn output_line(&self, tokens: Vec<Token>, matches: &HashSet<Position>) -> Option<String> {
         match self.mode {
-            Mode::Filter => match positions.is_empty() {
+            Mode::Filter => match matches.is_empty() {
                 true => None,
                 false => Some(self.normal_text(tokens)),
             },
-            Mode::Highlight(colour) => Some(self.highlighted_text(tokens, positions, colour)),
-            Mode::FilterHighlight(colour) => match positions.is_empty() {
+            Mode::Highlight(colour) => Some(self.highlighted_text(tokens, matches, colour)),
+            Mode::FilterHighlight(colour) => match matches.is_empty() {
                 true => None,
-                false => Some(self.highlighted_text(tokens, positions, colour)),
+                false => Some(self.highlighted_text(tokens, matches, colour)),
             },
         }
     }
@@ -89,10 +89,10 @@ impl<'a> Filter<'a> {
     }
 
     // TODO consider returning Option<&str>
-    fn highlighted_text(&self, tokens: Vec<Token>, positions: &HashSet<Position>, colour: Colour) -> String {
+    fn highlighted_text(&self, tokens: Vec<Token>, matches: &HashSet<Position>, colour: Colour) -> String {
         tokens
             .into_iter()
-            .map(|t| match positions.contains(&t.position) {
+            .map(|t| match matches.contains(&t.position) {
                 true => colour.paint(t.text).to_string(),
                 false => t.text,
             })

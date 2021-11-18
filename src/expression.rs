@@ -21,28 +21,28 @@ peg::parser!(pub grammar expression() for str {
     // conditions
     //
     rule integer_condition(tokens: &Vec<Token>) -> HashSet<Position>
-    = integers:integers(tokens) " == " integer:integer() { matching_positions(&integers, |term| term.value == integer) }
-    / integers:integers(tokens) " != " integer:integer() { matching_positions(&integers, |term| term.value != integer) }
-    / integers:integers(tokens) " > " integer:integer() { matching_positions(&integers, |term| term.value > integer) }
-    / integers:integers(tokens) " >= " integer:integer() { matching_positions(&integers, |term| term.value >= integer) }
-    / integers:integers(tokens) " < " integer:integer() { matching_positions(&integers, |term| term.value < integer) }
-    / integers:integers(tokens) " <= " integer:integer() { matching_positions(&integers, |term| term.value <= integer) }
+    = integers:integers(tokens) " == " integer:integer() { matches(&integers, |term| term.value == integer) }
+    / integers:integers(tokens) " != " integer:integer() { matches(&integers, |term| term.value != integer) }
+    / integers:integers(tokens) " > " integer:integer() { matches(&integers, |term| term.value > integer) }
+    / integers:integers(tokens) " >= " integer:integer() { matches(&integers, |term| term.value >= integer) }
+    / integers:integers(tokens) " < " integer:integer() { matches(&integers, |term| term.value < integer) }
+    / integers:integers(tokens) " <= " integer:integer() { matches(&integers, |term| term.value <= integer) }
 
     rule float_condition(tokens: &Vec<Token>) -> HashSet<Position>
-    = floats:floats(tokens) " == " float:float() { matching_positions(&floats, |term| term.value == float) }
-    / floats:floats(tokens) " != " float:float() { matching_positions(&floats, |term| term.value != float) }
-    / floats:floats(tokens) " > " float:float() { matching_positions(&floats, |term| term.value > float) }
-    / floats:floats(tokens) " >= " float:float() { matching_positions(&floats, |term| term.value >= float) }
-    / floats:floats(tokens) " < " float:float() { matching_positions(&floats, |term| term.value < float) }
-    / floats:floats(tokens) " <= " float:float() { matching_positions(&floats, |term| term.value <= float) }
+    = floats:floats(tokens) " == " float:float() { matches(&floats, |term| term.value == float) }
+    / floats:floats(tokens) " != " float:float() { matches(&floats, |term| term.value != float) }
+    / floats:floats(tokens) " > " float:float() { matches(&floats, |term| term.value > float) }
+    / floats:floats(tokens) " >= " float:float() { matches(&floats, |term| term.value >= float) }
+    / floats:floats(tokens) " < " float:float() { matches(&floats, |term| term.value < float) }
+    / floats:floats(tokens) " <= " float:float() { matches(&floats, |term| term.value <= float) }
 
     rule text_condition(tokens: &Vec<Token>) -> HashSet<Position>
-    = texts:texts(tokens) " == " text:text() { matching_positions(&texts, |term| term.value == text) }
-    / texts:texts(tokens) " != " text:text() { matching_positions(&texts, |term| term.value != text) }
-    / texts:texts(tokens) " > " text:text() { matching_positions(&texts, |term| term.value > text) }
-    / texts:texts(tokens) " >= " text:text() { matching_positions(&texts, |term| term.value >= text) }
-    / texts:texts(tokens) " < " text:text() { matching_positions(&texts, |term| term.value < text) }
-    / texts:texts(tokens) " <= " text:text() { matching_positions(&texts, |term| term.value <= text) }
+    = texts:texts(tokens) " == " text:text() { matches(&texts, |term| term.value == text) }
+    / texts:texts(tokens) " != " text:text() { matches(&texts, |term| term.value != text) }
+    / texts:texts(tokens) " > " text:text() { matches(&texts, |term| term.value > text) }
+    / texts:texts(tokens) " >= " text:text() { matches(&texts, |term| term.value >= text) }
+    / texts:texts(tokens) " < " text:text() { matches(&texts, |term| term.value < text) }
+    / texts:texts(tokens) " <= " text:text() { matches(&texts, |term| term.value <= text) }
 
     //
     // terms
@@ -78,7 +78,7 @@ peg::parser!(pub grammar expression() for str {
         }
 });
 
-fn matching_positions<P>(terms: &Vec<Term>, predicate: P) -> HashSet<Position>
+fn matches<P>(terms: &Vec<Term>, predicate: P) -> HashSet<Position>
 where
     P: FnMut(&&Term) -> bool,
 {
@@ -94,7 +94,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn matching_integer_positions() {
+    fn integer_matches() {
         // setup
         let integers = vec![
             Term {
@@ -112,15 +112,15 @@ mod tests {
         ];
 
         // exercise
-        let integers_eq_integer_0 = matching_positions(&integers, |term| term.value == Value::Integer(0));
-        let integers_eq_integer_2 = matching_positions(&integers, |term| term.value == Value::Integer(2));
-        let integeres_ne_integer_0 = matching_positions(&integers, |term| term.value != Value::Integer(0));
-        let integers_ne_integer_2 = matching_positions(&integers, |term| term.value != Value::Integer(2));
-        let integers_gt_integer_0 = matching_positions(&integers, |term| term.value > Value::Integer(0));
-        let integers_lt_integer_0 = matching_positions(&integers, |term| term.value < Value::Integer(0));
-        let integers_eq_float_2 = matching_positions(&integers, |term| term.value == Value::Float(2.0));
-        let integers_gt_float_0 = matching_positions(&integers, |term| term.value > Value::Float(0.0));
-        let integers_eq_text_2 = matching_positions(&integers, |term| term.value > Value::Text(String::from("2")));
+        let integers_eq_integer_0 = matches(&integers, |term| term.value == Value::Integer(0));
+        let integers_eq_integer_2 = matches(&integers, |term| term.value == Value::Integer(2));
+        let integeres_ne_integer_0 = matches(&integers, |term| term.value != Value::Integer(0));
+        let integers_ne_integer_2 = matches(&integers, |term| term.value != Value::Integer(2));
+        let integers_gt_integer_0 = matches(&integers, |term| term.value > Value::Integer(0));
+        let integers_lt_integer_0 = matches(&integers, |term| term.value < Value::Integer(0));
+        let integers_eq_float_2 = matches(&integers, |term| term.value == Value::Float(2.0));
+        let integers_gt_float_0 = matches(&integers, |term| term.value > Value::Float(0.0));
+        let integers_eq_text_2 = matches(&integers, |term| term.value > Value::Text(String::from("2")));
 
         // verify
         assert_eq!(HashSet::from([]), integers_eq_integer_0);
