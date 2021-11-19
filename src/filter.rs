@@ -8,8 +8,6 @@ use crate::tokenizer::Position;
 use crate::tokenizer::Token;
 use crate::tokenizer::Tokenizer;
 
-pub const DEFAULT_MODE: Mode = Mode::FilterHighlight(Colour::Red);
-
 #[derive(PartialEq)]
 pub enum Mode {
     Filter,
