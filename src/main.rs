@@ -4,6 +4,7 @@ mod parser;
 mod tokenizer;
 
 use ansi_term::Colour;
+use anyhow::{Context, Result};
 use clap::{App, Arg};
 use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
@@ -12,14 +13,15 @@ use crate::filter::Filter;
 use crate::filter::Mode;
 use crate::tokenizer::Tokenizer;
 
-fn main() {
-    let (mut input, mut output, mode, expression) = args();
+fn main() -> Result<()> {
+    let (mut input, mut output, mode, expression) = args()?;
     let tokenizer = Tokenizer::new();
     let filter = Filter::new(&tokenizer, &expression, mode).unwrap(); // TODO error handling
     let result = filter.filter(&mut input, &mut output).unwrap(); // TODO error handling, TODO handle result
+    Ok(())
 }
 
-fn args() -> (Box<dyn Read>, Box<dyn Write>, Mode, String) {
+fn args() -> Result<(Box<dyn Read>, Box<dyn Write>, Mode, String)> {
     // TODO parameters --separator with values "[:space:]", ",", ...
     let input_option = "input";
     let output_option = "output";
@@ -61,11 +63,15 @@ fn args() -> (Box<dyn Read>, Box<dyn Write>, Mode, String) {
     let args = semfilter.get_matches();
     let input: Box<dyn Read> = match args.value_of(input_option) {
         None => Box::new(stdin()),
-        Some(input_file) => Box::new(File::open(input_file).unwrap()), // TODO error handling
+        Some(input_file) => {
+            Box::new(File::open(input_file).context(format!("failed to open input-file '{}'", input_file))?)
+        }
     };
     let output: Box<dyn Write> = match args.value_of(output_option) {
         None => Box::new(stdout()),
-        Some(output_file) => Box::new(File::open(output_file).unwrap()), // TODO error handling
+        Some(output_file) => {
+            Box::new(File::open(output_file).context(format!("failed to open output-file '{}'", output_file))?)
+        }
     };
     let mode = Mode::FilterHighlight(Colour::Red);
     // TODO mode
@@ -75,5 +81,5 @@ fn args() -> (Box<dyn Read>, Box<dyn Write>, Mode, String) {
     // };
     let expression = String::from(args.value_of(expression_argument).unwrap());
 
-    return (input, output, mode, expression);
+    return Ok((input, output, mode, expression));
 }
