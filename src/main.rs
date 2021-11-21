@@ -3,54 +3,54 @@ mod filter;
 mod parser;
 mod tokenizer;
 
-use ansi_term::Colour;
-use anyhow::{Context, Result};
+use anyhow::{Context, Error, Result};
 use clap::{App, Arg};
 use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
+use std::str::FromStr;
 
-use crate::filter::Filter;
-use crate::filter::Mode;
+use crate::filter::{Filter, Mode};
+use crate::filter::{FILTER, FILTER_HIGHLIGHT, HIGHLIGHT};
 use crate::tokenizer::Tokenizer;
 
-fn main() -> Result<()> {
-    let (mut input, mut output, mode, expression) = args()?;
+fn main() -> Result<(), Error> {
+    let (mut input, mut output, mode, expression) = parse_arguments().context("Invalid command options / arguments")?;
     let tokenizer = Tokenizer::new();
     let filter = Filter::new(&tokenizer, &expression, mode).unwrap(); // TODO error handling
     let result = filter.filter(&mut input, &mut output).unwrap(); // TODO error handling, TODO handle result
     Ok(())
 }
 
-fn args() -> Result<(Box<dyn Read>, Box<dyn Write>, Mode, String)> {
+fn parse_arguments() -> Result<(Box<dyn Read>, Box<dyn Write>, Mode, String)> {
     // TODO parameters --separator with values "[:space:]", ",", ...
-    let input_option = "input";
-    let output_option = "output";
-    let mode_option = "mode";
+    let input_argument = "input";
+    let output_argument = "output";
+    let mode_argument = "mode";
     let expression_argument = "expression";
-    let semfilter = App::new("semfilter")
+    let semfilter_command = App::new("semfilter")
         .version("0.1")
         .about("semantic filter") // TODO description
         .arg(
-            Arg::with_name(input_option)
+            Arg::with_name(input_argument)
                 .short("i")
                 .long("input-file")
                 .value_name("input-file")
                 .help("Input file to read (stdin if not specified)"),
         )
         .arg(
-            Arg::with_name(output_option)
+            Arg::with_name(output_argument)
                 .short("o")
                 .long("output-file")
                 .value_name("output-file")
-                .help("Output file to wrote (stdout if not specified)"),
+                .help("Output file to write (stdout if not specified)"),
         )
         .arg(
-            Arg::with_name(mode_option)
+            Arg::with_name(mode_argument)
                 .short("m")
                 .long("mode")
                 .value_name("mode")
-                .default_value("filter-and-highlight")
-                .possible_values(&["filter", "highlight", "filter-and-highlight"])
+                .default_value(FILTER_HIGHLIGHT)
+                .possible_values(&[FILTER, HIGHLIGHT, FILTER_HIGHLIGHT])
                 .help("Filter mode"),
         )
         .arg(
@@ -60,26 +60,21 @@ fn args() -> Result<(Box<dyn Read>, Box<dyn Write>, Mode, String)> {
                 .index(1),
         );
 
-    let args = semfilter.get_matches();
-    let input: Box<dyn Read> = match args.value_of(input_option) {
+    let argument_matches = semfilter_command.get_matches();
+    let input: Box<dyn Read> = match argument_matches.value_of(input_argument) {
         None => Box::new(stdin()),
         Some(input_file) => {
-            Box::new(File::open(input_file).context(format!("failed to open input-file '{}'", input_file))?)
+            Box::new(File::open(input_file).context(format!("Failed to open input-file '{}'", input_file))?)
         }
     };
-    let output: Box<dyn Write> = match args.value_of(output_option) {
+    let output: Box<dyn Write> = match argument_matches.value_of(output_argument) {
         None => Box::new(stdout()),
         Some(output_file) => {
-            Box::new(File::open(output_file).context(format!("failed to open output-file '{}'", output_file))?)
+            Box::new(File::open(output_file).context(format!("Failed to open output-file '{}'", output_file))?)
         }
     };
-    let mode = Mode::FilterHighlight(Colour::Red);
-    // TODO mode
-    // let mode = match args.value_of(mode_arg) {
-    //     None => Mode::FilterHighlight(Colour::Red),
-    //     Some(mode) => Mode::from(mode),
-    // };
-    let expression = String::from(args.value_of(expression_argument).unwrap());
+    let mode = Mode::from_str(argument_matches.value_of(mode_argument).unwrap())?;
+    let expression = String::from(argument_matches.value_of(expression_argument).unwrap());
 
     return Ok((input, output, mode, expression));
 }

@@ -1,18 +1,37 @@
 use ansi_term::Colour;
+use anyhow::anyhow;
 use std::collections::HashSet;
 use std::error::Error;
 use std::io::{BufRead, BufReader, LineWriter, Read, Write};
+use std::str::FromStr;
 
 use crate::expression::expression;
 use crate::tokenizer::Position;
 use crate::tokenizer::Token;
 use crate::tokenizer::Tokenizer;
 
+pub const FILTER: &str = "filter";
+pub const HIGHLIGHT: &str = "highlight";
+pub const FILTER_HIGHLIGHT: &str = "filter-and-highlight";
+
 #[derive(PartialEq)]
 pub enum Mode {
     Filter,
     Highlight(Colour),
     FilterHighlight(Colour),
+}
+
+impl FromStr for Mode {
+    type Err = anyhow::Error;
+
+    fn from_str(string: &str) -> std::result::Result<Self, <Self as std::str::FromStr>::Err> {
+        match string {
+            FILTER => Ok(Mode::Filter),
+            HIGHLIGHT => Ok(Mode::Highlight(Colour::Red)),
+            FILTER_HIGHLIGHT => Ok(Mode::FilterHighlight(Colour::Red)),
+            _ => Err(anyhow!("invalid mode '{}'", string)),
+        }
+    }
 }
 
 pub struct Filter<'a> {
