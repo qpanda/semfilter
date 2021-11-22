@@ -40,8 +40,8 @@ pub struct Filter<'a> {
 }
 
 pub struct Lines {
-    processed: usize,
-    matched: usize,
+    pub processed: usize,
+    pub matched: usize,
 }
 
 impl<'a> Filter<'a> {
