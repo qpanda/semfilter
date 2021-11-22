@@ -1,11 +1,10 @@
 use ansi_term::Colour;
-use anyhow::anyhow;
+use anyhow::{anyhow, Context, Error};
 use std::collections::HashSet;
-use std::error::Error;
 use std::io::{BufRead, BufReader, LineWriter, Read, Write};
 use std::str::FromStr;
 
-use crate::expression::expression;
+use crate::expression::expression::evaluate;
 use crate::tokenizer::Position;
 use crate::tokenizer::Token;
 use crate::tokenizer::Tokenizer;
@@ -22,14 +21,14 @@ pub enum Mode {
 }
 
 impl FromStr for Mode {
-    type Err = anyhow::Error;
+    type Err = Error;
 
-    fn from_str(string: &str) -> std::result::Result<Self, <Self as std::str::FromStr>::Err> {
-        match string {
+    fn from_str(mode: &str) -> Result<Self, Error> {
+        match mode {
             FILTER => Ok(Mode::Filter),
             HIGHLIGHT => Ok(Mode::Highlight(Colour::Red)),
             FILTER_HIGHLIGHT => Ok(Mode::FilterHighlight(Colour::Red)),
-            _ => Err(anyhow!("invalid mode '{}'", string)),
+            _ => Err(anyhow!("invalid mode '{}'", mode)),
         }
     }
 }
@@ -46,18 +45,17 @@ pub struct Lines {
 }
 
 impl<'a> Filter<'a> {
-    pub fn new(tokenizer: &'a Tokenizer, expression: &'a str, mode: Mode) -> Result<Self, Box<dyn Error>> {
-        match expression::evaluate(expression, &vec![]) {
-            Ok(_) => Ok(Filter {
-                tokenizer: tokenizer,
-                expression: expression,
-                mode: mode,
-            }),
-            Err(error) => Err(error.into()),
-        }
+    pub fn new(tokenizer: &'a Tokenizer, expression: &'a str, mode: Mode) -> Result<Self, Error> {
+        evaluate(expression, &vec![]).context(format!("Invalid filter expression '{}'", expression))?;
+
+        Ok(Filter {
+            tokenizer: tokenizer,
+            expression: expression,
+            mode: mode,
+        })
     }
 
-    pub fn filter(&self, read: &mut dyn Read, write: &mut dyn Write) -> Result<Lines, Box<dyn Error>> {
+    pub fn filter(&self, read: &mut dyn Read, write: &mut dyn Write) -> Result<Lines, Error> {
         let mut lines = Lines {
             processed: 0,
             matched: 0,
@@ -66,12 +64,19 @@ impl<'a> Filter<'a> {
         let reader = BufReader::new(read);
         let mut writer = LineWriter::new(write);
         for input_line in reader.lines() {
-            let input_line = input_line?;
+            let input_line = input_line.context(format!("Unable to read line '{}' of input-file", lines.processed))?;
             let tokens = self.tokenizer.tokens(&input_line);
-            let matches = expression::evaluate(self.expression, &tokens)?;
+            let matches = evaluate(self.expression, &tokens).context(format!(
+                "Evaluating expression '{}' for line '{}' of input-file failed",
+                self.expression, lines.processed
+            ))?;
             if let Some(output_line) = self.output_line(tokens, &matches) {
-                writer.write_all(output_line.as_bytes())?;
-                writer.write_all(b"\n")?;
+                writer
+                    .write_all(output_line.as_bytes())
+                    .context(format!("Unable to write to output-file"))?;
+                writer
+                    .write_all(b"\n")
+                    .context(format!("Unable to write to output-file"))?;
             }
 
             if !matches.is_empty() {
@@ -79,8 +84,6 @@ impl<'a> Filter<'a> {
             }
             lines.processed += 1;
         }
-
-        writer.flush()?;
 
         Ok(lines)
     }

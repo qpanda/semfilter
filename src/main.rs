@@ -3,7 +3,7 @@ mod filter;
 mod parser;
 mod tokenizer;
 
-use anyhow::{Context, Error, Result};
+use anyhow::{Context, Error};
 use clap::{App, Arg};
 use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
@@ -16,12 +16,12 @@ use crate::tokenizer::Tokenizer;
 fn main() -> Result<(), Error> {
     let (mut input, mut output, mode, expression) = parse_arguments().context("Invalid command options / arguments")?;
     let tokenizer = Tokenizer::new();
-    let filter = Filter::new(&tokenizer, &expression, mode).unwrap(); // TODO error handling
-    let result = filter.filter(&mut input, &mut output).unwrap(); // TODO error handling, TODO handle result
+    let filter = Filter::new(&tokenizer, &expression, mode).context("Initializing filter failed")?;
+    let result = filter.filter(&mut input, &mut output).context("Filtering failed")?;
     Ok(())
 }
 
-fn parse_arguments() -> Result<(Box<dyn Read>, Box<dyn Write>, Mode, String)> {
+fn parse_arguments() -> Result<(Box<dyn Read>, Box<dyn Write>, Mode, String), Error> {
     // TODO parameters --separator with values "[:space:]", ",", ...
     let input_argument = "input";
     let output_argument = "output";
