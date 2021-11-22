@@ -62,19 +62,19 @@ peg::parser!(pub grammar expression() for str {
     // TODO check internet for correct pattern for integers
     rule integer() -> Value
         = n:$(['0'..='9']+) {?
-            Value::new(&String::from(n), &Class::Integer).map_err(|_| "Failed to parse integer")
+            Value::from(&String::from(n), &Class::Integer).map_err(|_| "Failed to parse integer")
         }
 
     // TODO check internet for correct pattern for floats
     rule float() -> Value
         = n:$(['0'..='9']+"."['0'..='9']+) {?
-            Value::new(&String::from(n), &Class::Float).map_err(|_| "Failed to parse float")
+            Value::from(&String::from(n), &Class::Float).map_err(|_| "Failed to parse float")
         }
 
     // TODO is identifier, do we want general text?
     rule text() -> Value
         = n:$(['a'..='z'|'A'..='Z']['a'..='z'|'A'..='Z'|'0'..='9']+) {?
-            Value::new(&String::from(n), &Class::Text).map_err(|_| "Failed to parse text")
+            Value::from(&String::from(n), &Class::Text).map_err(|_| "Failed to parse text")
         }
 });
 
