@@ -37,6 +37,7 @@ pub struct Filter<'a> {
     tokenizer: &'a Tokenizer,
     expression: &'a str,
     mode: Mode,
+    summary: bool,
 }
 
 pub struct Lines {
@@ -45,13 +46,14 @@ pub struct Lines {
 }
 
 impl<'a> Filter<'a> {
-    pub fn new(tokenizer: &'a Tokenizer, expression: &'a str, mode: Mode) -> Result<Self, Error> {
+    pub fn new(tokenizer: &'a Tokenizer, expression: &'a str, mode: Mode, summary: bool) -> Result<Self, Error> {
         evaluate(expression, &vec![]).context(format!("Invalid filter expression '{}'", expression))?;
 
         Ok(Filter {
             tokenizer: tokenizer,
             expression: expression,
             mode: mode,
+            summary: summary,
         })
     }
 
@@ -83,6 +85,13 @@ impl<'a> Filter<'a> {
                 lines.matched += 1;
             }
             lines.processed += 1;
+        }
+
+        if self.summary {
+            println!(
+                "\n{} line(s) processed, {} line(s) matched",
+                lines.processed, lines.matched
+            );
         }
 
         Ok(lines)
@@ -137,7 +146,7 @@ mod tests {
 
         let tokenizer = Tokenizer::new();
         let expression = "$integer == 9";
-        let filter = Filter::new(&tokenizer, expression, Mode::Filter).unwrap();
+        let filter = Filter::new(&tokenizer, expression, Mode::Filter, false).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -169,7 +178,7 @@ mod tests {
 
         let tokenizer = Tokenizer::new();
         let expression = "$id == ipsum";
-        let filter = Filter::new(&tokenizer, expression, Mode::Highlight(colour)).unwrap();
+        let filter = Filter::new(&tokenizer, expression, Mode::Highlight(colour), false).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -195,7 +204,7 @@ mod tests {
 
         let tokenizer = Tokenizer::new();
         let expression = "$id == abc";
-        let filter = Filter::new(&tokenizer, expression, Mode::Highlight(Colour::Red)).unwrap();
+        let filter = Filter::new(&tokenizer, expression, Mode::Highlight(Colour::Red), false).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -221,7 +230,7 @@ mod tests {
 
         let tokenizer = Tokenizer::new();
         let expression = "$id == ipsum";
-        let filter = Filter::new(&tokenizer, expression, Mode::Filter).unwrap();
+        let filter = Filter::new(&tokenizer, expression, Mode::Filter, false).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -247,7 +256,7 @@ mod tests {
 
         let tokenizer = Tokenizer::new();
         let expression = "$id == abc";
-        let filter = Filter::new(&tokenizer, expression, Mode::Filter).unwrap();
+        let filter = Filter::new(&tokenizer, expression, Mode::Filter, false).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -279,7 +288,7 @@ mod tests {
 
         let tokenizer = Tokenizer::new();
         let expression = "$id == ipsum";
-        let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(colour)).unwrap();
+        let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(colour), false).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -305,7 +314,7 @@ mod tests {
 
         let tokenizer = Tokenizer::new();
         let expression = "$id == abc";
-        let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(Colour::Red)).unwrap();
+        let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(Colour::Red), false).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
