@@ -6,14 +6,14 @@ use crate::tokenizer::Token;
 pub enum Class {
     Integer,
     Float,
-    Text,
+    Id,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub enum Value {
-    Integer(u64),
+    Integer(i64),
     Float(f64),
-    Text(String),
+    Id(String),
 }
 
 #[derive(Debug, PartialEq)]
@@ -25,7 +25,7 @@ pub struct Term {
 impl Value {
     pub fn from(text: &String, class: &Class) -> Result<Self, Error> {
         match class {
-            Class::Integer => match text.parse::<u64>() {
+            Class::Integer => match text.parse::<i64>() {
                 Ok(integer) => Ok(Value::Integer(integer)),
                 Err(error) => Err(error.into()),
             },
@@ -33,7 +33,7 @@ impl Value {
                 Ok(float) => Ok(Value::Float(float)),
                 Err(error) => Err(error.into()),
             },
-            Class::Text => Ok(Value::Text(String::from(text))),
+            Class::Id => Ok(Value::Id(String::from(text))),
         }
     }
 }
@@ -65,12 +65,12 @@ mod value_tests {
         let integer = 8;
         let integer_text = integer.to_string();
         let float_text = "5.5";
-        let text = "text";
+        let id_text = "text";
 
         // exercise
         let ok = Value::from(&String::from(integer_text), &Class::Integer);
         let err_1 = Value::from(&String::from(float_text), &Class::Integer);
-        let err_2 = Value::from(&String::from(text), &Class::Integer);
+        let err_2 = Value::from(&String::from(id_text), &Class::Integer);
 
         // verify
         assert_eq!(Value::Integer(integer), ok.unwrap());
@@ -85,12 +85,12 @@ mod value_tests {
         let integer = 8;
         let float_text = float.to_string();
         let integer_text = integer.to_string();
-        let text = "text";
+        let id_text = "text";
 
         // exercise
         let ok_1 = Value::from(&String::from(float_text), &Class::Float);
         let ok_2 = Value::from(&String::from(integer_text), &Class::Float);
-        let err = Value::from(&String::from(text), &Class::Float);
+        let err = Value::from(&String::from(id_text), &Class::Float);
 
         // verify
         assert_eq!(Value::Float(float), ok_1.unwrap());
@@ -99,23 +99,23 @@ mod value_tests {
     }
 
     #[test]
-    fn new_text() {
+    fn new_id() {
         // setup
         let float = 5.5;
         let integer = 8;
         let float_text = float.to_string();
         let integer_text = integer.to_string();
-        let text = String::from("text");
+        let id_text = String::from("id");
 
         // exercise
-        let ok_1 = Value::from(&String::from(&float_text), &Class::Text);
-        let ok_2 = Value::from(&String::from(&integer_text), &Class::Text);
-        let ok_3 = Value::from(&String::from(&text), &Class::Text);
+        let ok_1 = Value::from(&String::from(&float_text), &Class::Id);
+        let ok_2 = Value::from(&String::from(&integer_text), &Class::Id);
+        let ok_3 = Value::from(&String::from(&id_text), &Class::Id);
 
         // verify
-        assert_eq!(Value::Text(float_text), ok_1.unwrap());
-        assert_eq!(Value::Text(integer_text), ok_2.unwrap());
-        assert_eq!(Value::Text(text), ok_3.unwrap());
+        assert_eq!(Value::Id(float_text), ok_1.unwrap());
+        assert_eq!(Value::Id(integer_text), ok_2.unwrap());
+        assert_eq!(Value::Id(id_text), ok_3.unwrap());
     }
 }
 
@@ -134,12 +134,12 @@ mod term_tests {
         let tokens = vec![separator_token];
 
         // exercise
-        let text_terms = Term::from(&tokens, &Class::Text);
+        let id_terms = Term::from(&tokens, &Class::Id);
         let integer_terms = Term::from(&tokens, &Class::Integer);
         let float_terms = Term::from(&tokens, &Class::Float);
 
         // verify
-        assert_eq!(0, text_terms.len());
+        assert_eq!(0, id_terms.len());
         assert_eq!(0, integer_terms.len());
         assert_eq!(0, float_terms.len());
     }
@@ -157,18 +157,18 @@ mod term_tests {
         let tokens = vec![text_token];
 
         // exercise
-        let text_terms = Term::from(&tokens, &Class::Text);
+        let id_terms = Term::from(&tokens, &Class::Id);
         let integer_terms = Term::from(&tokens, &Class::Integer);
         let float_terms = Term::from(&tokens, &Class::Float);
 
         // verify
-        assert_eq!(1, text_terms.len());
+        assert_eq!(1, id_terms.len());
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(text), &Class::Text).unwrap(),
+                value: Value::from(&String::from(text), &Class::Id).unwrap(),
             },
-            text_terms.get(0).unwrap()
+            id_terms.get(0).unwrap()
         );
 
         assert_eq!(0, integer_terms.len());
@@ -189,18 +189,18 @@ mod term_tests {
         let tokens = vec![integer_token];
 
         // exercise
-        let text_terms = Term::from(&tokens, &Class::Text);
+        let id_terms = Term::from(&tokens, &Class::Id);
         let integer_terms = Term::from(&tokens, &Class::Integer);
         let float_terms = Term::from(&tokens, &Class::Float);
 
         // verify
-        assert_eq!(1, text_terms.len());
+        assert_eq!(1, id_terms.len());
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(text), &Class::Text).unwrap(),
+                value: Value::from(&String::from(text), &Class::Id).unwrap(),
             },
-            text_terms.get(0).unwrap()
+            id_terms.get(0).unwrap()
         );
 
         assert_eq!(1, integer_terms.len());
@@ -235,18 +235,18 @@ mod term_tests {
         let tokens = vec![float_token];
 
         // exercise
-        let text_terms = Term::from(&tokens, &Class::Text);
+        let id_terms = Term::from(&tokens, &Class::Id);
         let integer_terms = Term::from(&tokens, &Class::Integer);
         let float_terms = Term::from(&tokens, &Class::Float);
 
         // verify
-        assert_eq!(1, text_terms.len());
+        assert_eq!(1, id_terms.len());
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(text), &Class::Text).unwrap(),
+                value: Value::from(&String::from(text), &Class::Id).unwrap(),
             },
-            text_terms.get(0).unwrap()
+            id_terms.get(0).unwrap()
         );
 
         assert_eq!(0, integer_terms.len());
@@ -262,7 +262,7 @@ mod term_tests {
     }
 
     #[test]
-    fn to_text() {
+    fn to_id() {
         // setup
         let position0 = 0;
         let position2 = 2;
@@ -323,44 +323,44 @@ mod term_tests {
         ];
 
         // exercise
-        let text_terms = Term::from(&tokens, &Class::Text);
+        let id_terms = Term::from(&tokens, &Class::Id);
 
         // verify
-        assert_eq!(5, text_terms.len());
+        assert_eq!(5, id_terms.len());
         assert_eq!(
             &Term {
                 position: position0,
-                value: Value::from(&String::from(text0), &Class::Text).unwrap(),
+                value: Value::from(&String::from(text0), &Class::Id).unwrap(),
             },
-            text_terms.get(0).unwrap()
+            id_terms.get(0).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position2,
-                value: Value::from(&String::from(text2), &Class::Text).unwrap(),
+                value: Value::from(&String::from(text2), &Class::Id).unwrap(),
             },
-            text_terms.get(1).unwrap()
+            id_terms.get(1).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position4,
-                value: Value::from(&String::from(text4), &Class::Text).unwrap(),
+                value: Value::from(&String::from(text4), &Class::Id).unwrap(),
             },
-            text_terms.get(2).unwrap()
+            id_terms.get(2).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position6,
-                value: Value::from(&String::from(text6), &Class::Text).unwrap(),
+                value: Value::from(&String::from(text6), &Class::Id).unwrap(),
             },
-            text_terms.get(3).unwrap()
+            id_terms.get(3).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position8,
-                value: Value::from(&String::from(text8), &Class::Text).unwrap(),
+                value: Value::from(&String::from(text8), &Class::Id).unwrap(),
             },
-            text_terms.get(4).unwrap()
+            id_terms.get(4).unwrap()
         );
     }
 

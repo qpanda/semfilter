@@ -136,7 +136,7 @@ mod tests {
         let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
-        let expression = "integer == 9";
+        let expression = "$integer == 9";
         let filter = Filter::new(&tokenizer, expression, Mode::Filter).unwrap();
 
         // exercise
@@ -168,7 +168,7 @@ mod tests {
         writeln!(expected_file, "{}", expected_text).unwrap();
 
         let tokenizer = Tokenizer::new();
-        let expression = "text == ipsum";
+        let expression = "$id == ipsum";
         let filter = Filter::new(&tokenizer, expression, Mode::Highlight(colour)).unwrap();
 
         // exercise
@@ -194,7 +194,7 @@ mod tests {
         let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
-        let expression = "text == abc";
+        let expression = "$id == abc";
         let filter = Filter::new(&tokenizer, expression, Mode::Highlight(Colour::Red)).unwrap();
 
         // exercise
@@ -220,7 +220,7 @@ mod tests {
         let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
-        let expression = "text == ipsum";
+        let expression = "$id == ipsum";
         let filter = Filter::new(&tokenizer, expression, Mode::Filter).unwrap();
 
         // exercise
@@ -246,7 +246,7 @@ mod tests {
         let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
-        let expression = "text == abc";
+        let expression = "$id == abc";
         let filter = Filter::new(&tokenizer, expression, Mode::Filter).unwrap();
 
         // exercise
@@ -278,7 +278,7 @@ mod tests {
         writeln!(expected_file, "{}", expected_text).unwrap();
 
         let tokenizer = Tokenizer::new();
-        let expression = "text == ipsum";
+        let expression = "$id == ipsum";
         let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(colour)).unwrap();
 
         // exercise
@@ -304,7 +304,7 @@ mod tests {
         let mut output = output_file.reopen().unwrap();
 
         let tokenizer = Tokenizer::new();
-        let expression = "text == abc";
+        let expression = "$id == abc";
         let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(Colour::Red)).unwrap();
 
         // exercise

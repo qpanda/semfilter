@@ -15,7 +15,7 @@ peg::parser!(pub grammar expression() for str {
     rule condition(tokens: &Vec<Token>) -> HashSet<Position>
         = integer_condition(tokens)
         / float_condition(tokens)
-        / text_condition(tokens)
+        / id_condition(tokens)
 
     //
     // conditions
@@ -36,45 +36,42 @@ peg::parser!(pub grammar expression() for str {
     / floats:floats(tokens) " < " float:float() { matches(&floats, |term| term.value < float) }
     / floats:floats(tokens) " <= " float:float() { matches(&floats, |term| term.value <= float) }
 
-    rule text_condition(tokens: &Vec<Token>) -> HashSet<Position>
-    = texts:texts(tokens) " == " text:text() { matches(&texts, |term| term.value == text) }
-    / texts:texts(tokens) " != " text:text() { matches(&texts, |term| term.value != text) }
-    / texts:texts(tokens) " > " text:text() { matches(&texts, |term| term.value > text) }
-    / texts:texts(tokens) " >= " text:text() { matches(&texts, |term| term.value >= text) }
-    / texts:texts(tokens) " < " text:text() { matches(&texts, |term| term.value < text) }
-    / texts:texts(tokens) " <= " text:text() { matches(&texts, |term| term.value <= text) }
+    rule id_condition(tokens: &Vec<Token>) -> HashSet<Position>
+    = ids:ids(tokens) " == " id:id() { matches(&ids, |term| term.value == id) }
+    / ids:ids(tokens) " != " id:id() { matches(&ids, |term| term.value != id) }
+    / ids:ids(tokens) " > " id:id() { matches(&ids, |term| term.value > id) }
+    / ids:ids(tokens) " >= " id:id() { matches(&ids, |term| term.value >= id) }
+    / ids:ids(tokens) " < " id:id() { matches(&ids, |term| term.value < id) }
+    / ids:ids(tokens) " <= " id:id() { matches(&ids, |term| term.value <= id) }
 
     //
     // terms
     //
     rule integers(tokens: &Vec<Token>) -> Vec<Term>
-        = "integer" { Term::from(tokens, &Class::Integer) }
+        = "$integer" { Term::from(tokens, &Class::Integer) }
 
     rule floats(tokens: &Vec<Token>) -> Vec<Term>
-        = "float" { Term::from(tokens, &Class::Float) }
+        = "$float" { Term::from(tokens, &Class::Float) }
 
-    rule texts(tokens: &Vec<Token>) -> Vec<Term>
-        = "text" { Term::from(tokens, &Class::Text) }
+    rule ids(tokens: &Vec<Token>) -> Vec<Term>
+        = "$id" { Term::from(tokens, &Class::Id) }
 
     //
     // values
     //
-    // TODO check internet for correct pattern for integers
     rule integer() -> Value
-        = n:$(['0'..='9']+) {?
-            Value::from(&String::from(n), &Class::Integer).map_err(|_| "Failed to parse integer")
+        = n:$(['+'|'-']? ['0'..='9']+) {?
+            Value::from(&String::from(n), &Class::Integer).map_err(|_| "failed to parse integer")
         }
 
-    // TODO check internet for correct pattern for floats
     rule float() -> Value
-        = n:$(['0'..='9']+"."['0'..='9']+) {?
-            Value::from(&String::from(n), &Class::Float).map_err(|_| "Failed to parse float")
+        = n:$(['+'|'-']? ['0'..='9']* ['.']? ['0'..='9']*) {?
+            Value::from(&String::from(n), &Class::Float).map_err(|_| "failed to parse float")
         }
 
-    // TODO is identifier, do we want general text?
-    rule text() -> Value
-        = n:$(['a'..='z'|'A'..='Z']['a'..='z'|'A'..='Z'|'0'..='9']+) {?
-            Value::from(&String::from(n), &Class::Text).map_err(|_| "Failed to parse text")
+    rule id() -> Value
+        = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'.'|':'|'_'|'-']+) {?
+            Value::from(&String::from(n), &Class::Id).map_err(|_| "failed to parse id")
         }
 });
 
@@ -120,7 +117,7 @@ mod tests {
         let integers_lt_integer_0 = matches(&integers, |term| term.value < Value::Integer(0));
         let integers_eq_float_2 = matches(&integers, |term| term.value == Value::Float(2.0));
         let integers_gt_float_0 = matches(&integers, |term| term.value > Value::Float(0.0));
-        let integers_eq_text_2 = matches(&integers, |term| term.value > Value::Text(String::from("2")));
+        let integers_eq_id_2 = matches(&integers, |term| term.value > Value::Id(String::from("2")));
 
         // verify
         assert_eq!(HashSet::from([]), integers_eq_integer_0);
@@ -131,31 +128,31 @@ mod tests {
         assert_eq!(HashSet::from([]), integers_lt_integer_0);
         assert_eq!(HashSet::from([]), integers_eq_float_2);
         assert_eq!(HashSet::from([]), integers_gt_float_0);
-        assert_eq!(HashSet::from([]), integers_eq_text_2);
+        assert_eq!(HashSet::from([]), integers_eq_id_2);
     }
 
     #[test]
     fn invalid_integer_conditions() {
-        assert!(expression::evaluate("integer + 9", &vec![]).is_err());
+        assert!(expression::evaluate("$integer + 9", &vec![]).is_err());
         assert!(expression::evaluate("wrong == 9", &vec![]).is_err());
-        assert!(expression::evaluate("integer == a", &vec![]).is_err());
+        assert!(expression::evaluate("$integer == a", &vec![]).is_err());
     }
 
     #[test]
     fn valid_integer_conditions() {
-        assert!(expression::evaluate("integer == 9", &vec![]).is_ok());
-        assert!(expression::evaluate("integer != 9", &vec![]).is_ok());
-        assert!(expression::evaluate("integer > 9", &vec![]).is_ok());
-        assert!(expression::evaluate("integer >= 9", &vec![]).is_ok());
-        assert!(expression::evaluate("integer < 9", &vec![]).is_ok());
-        assert!(expression::evaluate("integer <= 9", &vec![]).is_ok());
+        assert!(expression::evaluate("$integer == 9", &vec![]).is_ok());
+        assert!(expression::evaluate("$integer != 9", &vec![]).is_ok());
+        assert!(expression::evaluate("$integer > 9", &vec![]).is_ok());
+        assert!(expression::evaluate("$integer >= 9", &vec![]).is_ok());
+        assert!(expression::evaluate("$integer < 9", &vec![]).is_ok());
+        assert!(expression::evaluate("$integer <= 9", &vec![]).is_ok());
     }
 
     #[test]
     fn evaluate_expression_no_tokens() {
-        assert_eq!(expression::evaluate("integer == 9", &vec![]), Ok(HashSet::new()));
-        assert_eq!(expression::evaluate("integer != 9", &vec![]), Ok(HashSet::new()));
-        assert_eq!(expression::evaluate("float > 1.0", &vec![]), Ok(HashSet::new()));
+        assert_eq!(expression::evaluate("$integer == 9", &vec![]), Ok(HashSet::new()));
+        assert_eq!(expression::evaluate("$integer != 9", &vec![]), Ok(HashSet::new()));
+        assert_eq!(expression::evaluate("$float > 1.0", &vec![]), Ok(HashSet::new()));
     }
 
     #[test]
@@ -179,14 +176,14 @@ mod tests {
             },
         ];
 
-        assert_eq!(expression::evaluate("integer == 9", &tokens), Ok(HashSet::from([1])));
-        assert_eq!(expression::evaluate("integer != 9", &tokens), Ok(HashSet::from([])));
-        assert_eq!(expression::evaluate("float == 5.5", &tokens), Ok(HashSet::from([2])));
-        assert_eq!(expression::evaluate("float != 5.5", &tokens), Ok(HashSet::from([1])));
-        assert_eq!(expression::evaluate("float > 0.0", &tokens), Ok(HashSet::from([1, 2])));
-        assert_eq!(expression::evaluate("float < 0.0", &tokens), Ok(HashSet::from([])));
-        assert_eq!(expression::evaluate("text == a1", &tokens), Ok(HashSet::from([0])));
-        assert_eq!(expression::evaluate("text != a1", &tokens), Ok(HashSet::from([1, 2])));
-        assert_eq!(expression::evaluate("text == b1", &tokens), Ok(HashSet::from([])));
+        assert_eq!(expression::evaluate("$integer == 9", &tokens), Ok(HashSet::from([1])));
+        assert_eq!(expression::evaluate("$integer != 9", &tokens), Ok(HashSet::from([])));
+        assert_eq!(expression::evaluate("$float == 5.5", &tokens), Ok(HashSet::from([2])));
+        assert_eq!(expression::evaluate("$float != 5.5", &tokens), Ok(HashSet::from([1])));
+        assert_eq!(expression::evaluate("$float > 0.0", &tokens), Ok(HashSet::from([1, 2])));
+        assert_eq!(expression::evaluate("$float < 0.0", &tokens), Ok(HashSet::from([])));
+        assert_eq!(expression::evaluate("$id == a1", &tokens), Ok(HashSet::from([0])));
+        assert_eq!(expression::evaluate("$id != a1", &tokens), Ok(HashSet::from([1, 2])));
+        assert_eq!(expression::evaluate("$id == b1", &tokens), Ok(HashSet::from([])));
     }
 }
