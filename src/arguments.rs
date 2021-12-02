@@ -10,7 +10,7 @@ pub struct Arguments {
     pub input: Box<dyn Read>,
     pub output: Box<dyn Write>,
     pub mode: Mode,
-    pub summary: bool,
+    pub count: bool,
     pub expression: String,
 }
 
@@ -20,7 +20,7 @@ impl Arguments {
         let input_argument = "input";
         let output_argument = "output";
         let mode_argument = "mode";
-        let summary_argument = "summary";
+        let count_argument = "count";
         let expression_argument = "expression";
         let semfilter_command = App::new("semfilter")
             .version("0.1")
@@ -49,11 +49,11 @@ impl Arguments {
                     .help("Filter mode"),
             )
             .arg(
-                Arg::with_name(summary_argument)
-                    .short("s")
-                    .long("summary")
+                Arg::with_name(count_argument)
+                    .short("c")
+                    .long("count")
                     .takes_value(false)
-                    .help("Print summary"),
+                    .help("Print processed and matched line count"),
             )
             .arg(
                 Arg::with_name(expression_argument)
@@ -65,27 +65,25 @@ impl Arguments {
         let argument_matches = semfilter_command.get_matches();
         let input: Box<dyn Read> = match argument_matches.value_of(input_argument) {
             None => Box::new(stdin()),
-            Some(input_file) => Box::new(
-                File::open(input_file)
-                    .context(format!("Failed to open input-file '{}'", input_file))?,
-            ),
+            Some(input_file) => {
+                Box::new(File::open(input_file).context(format!("Failed to open input-file '{}'", input_file))?)
+            }
         };
         let output: Box<dyn Write> = match argument_matches.value_of(output_argument) {
             None => Box::new(stdout()),
-            Some(output_file) => Box::new(
-                File::open(output_file)
-                    .context(format!("Failed to open output-file '{}'", output_file))?,
-            ),
+            Some(output_file) => {
+                Box::new(File::open(output_file).context(format!("Failed to open output-file '{}'", output_file))?)
+            }
         };
         let mode = Mode::from_str(argument_matches.value_of(mode_argument).unwrap())?;
-        let summary = argument_matches.is_present(summary_argument);
+        let count = argument_matches.is_present(count_argument);
         let expression = String::from(argument_matches.value_of(expression_argument).unwrap());
 
         return Ok(Arguments {
             input: input,
             output: output,
             mode: mode,
-            summary: summary,
+            count: count,
             expression: expression,
         });
     }

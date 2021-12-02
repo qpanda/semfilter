@@ -37,7 +37,7 @@ pub struct Filter<'a> {
     tokenizer: &'a Tokenizer,
     expression: &'a str,
     mode: Mode,
-    summary: bool,
+    count: bool,
 }
 
 pub struct Lines {
@@ -46,14 +46,14 @@ pub struct Lines {
 }
 
 impl<'a> Filter<'a> {
-    pub fn new(tokenizer: &'a Tokenizer, expression: &'a str, mode: Mode, summary: bool) -> Result<Self, Error> {
+    pub fn new(tokenizer: &'a Tokenizer, expression: &'a str, mode: Mode, count: bool) -> Result<Self, Error> {
         evaluate(expression, &vec![]).context(format!("Invalid filter expression '{}'", expression))?;
 
         Ok(Filter {
             tokenizer: tokenizer,
             expression: expression,
             mode: mode,
-            summary: summary,
+            count: count,
         })
     }
 
@@ -87,7 +87,7 @@ impl<'a> Filter<'a> {
             lines.processed += 1;
         }
 
-        if self.summary {
+        if self.count {
             println!(
                 "\n{} line(s) processed, {} line(s) matched",
                 lines.processed, lines.matched
