@@ -61,17 +61,17 @@ peg::parser!(pub grammar expression() for str {
     //
     rule integer() -> Value
         = n:$(['+'|'-']? ['0'..='9']+) {?
-            Value::from(&String::from(n), &Class::Integer).map_err(|_| "failed to parse integer")
+            Value::from(n, &Class::Integer).map_err(|_| "failed to parse integer")
         }
 
     rule float() -> Value
         = n:$(['+'|'-']? ['0'..='9']* ['.']? ['0'..='9']*) {?
-            Value::from(&String::from(n), &Class::Float).map_err(|_| "failed to parse float")
+            Value::from(n, &Class::Float).map_err(|_| "failed to parse float")
         }
 
     rule id() -> Value
         = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'.'|':'|'_'|'-']+) {?
-            Value::from(&String::from(n), &Class::Id).map_err(|_| "failed to parse id")
+            Value::from(n, &Class::Id).map_err(|_| "failed to parse id")
         }
 });
 

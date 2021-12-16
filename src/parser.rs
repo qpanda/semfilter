@@ -23,18 +23,17 @@ pub struct Term {
 }
 
 impl Value {
-    // TODO consider changing text: &String to text: &str
-    pub fn from(text: &String, class: &Class) -> Result<Self, Error> {
+    pub fn from(word: &str, class: &Class) -> Result<Self, Error> {
         match class {
-            Class::Integer => match text.parse::<i64>() {
+            Class::Integer => match word.parse::<i64>() {
                 Ok(integer) => Ok(Value::Integer(integer)),
                 Err(error) => Err(error.into()),
             },
-            Class::Float => match text.parse::<f64>() {
+            Class::Float => match word.parse::<f64>() {
                 Ok(float) => Ok(Value::Float(float)),
                 Err(error) => Err(error.into()),
             },
-            Class::Id => Ok(Value::Id(String::from(text))),
+            Class::Id => Ok(Value::Id(String::from(word))),
         }
     }
 }
@@ -44,7 +43,7 @@ impl Term {
         let mut result = Vec::new();
         for token in tokens {
             if !token.separator {
-                if let Ok(value) = Value::from(&token.word.to_string(), class) {
+                if let Ok(value) = Value::from(token.word, class) {
                     result.push(Term {
                         position: token.position,
                         value: value,
@@ -64,14 +63,11 @@ mod value_tests {
     fn new_integer() {
         // setup
         let integer = 8;
-        let integer_text = integer.to_string();
-        let float_text = "5.5";
-        let id_text = "text";
 
         // exercise
-        let ok = Value::from(&String::from(integer_text), &Class::Integer);
-        let err_1 = Value::from(&String::from(float_text), &Class::Integer);
-        let err_2 = Value::from(&String::from(id_text), &Class::Integer);
+        let ok = Value::from(&integer.to_string(), &Class::Integer);
+        let err_1 = Value::from("5.5", &Class::Integer);
+        let err_2 = Value::from("word", &Class::Integer);
 
         // verify
         assert_eq!(Value::Integer(integer), ok.unwrap());
@@ -84,14 +80,11 @@ mod value_tests {
         // setup
         let float = 5.5;
         let integer = 8;
-        let float_text = float.to_string();
-        let integer_text = integer.to_string();
-        let id_text = "text";
 
         // exercise
-        let ok_1 = Value::from(&String::from(float_text), &Class::Float);
-        let ok_2 = Value::from(&String::from(integer_text), &Class::Float);
-        let err = Value::from(&String::from(id_text), &Class::Float);
+        let ok_1 = Value::from(&float.to_string(), &Class::Float);
+        let ok_2 = Value::from(&integer.to_string(), &Class::Float);
+        let err = Value::from("word", &Class::Float);
 
         // verify
         assert_eq!(Value::Float(float), ok_1.unwrap());
@@ -102,21 +95,19 @@ mod value_tests {
     #[test]
     fn new_id() {
         // setup
-        let float = 5.5;
-        let integer = 8;
-        let float_text = float.to_string();
-        let integer_text = integer.to_string();
-        let id_text = String::from("id");
+        let float = "5.5";
+        let integer = "8";
+        let id = "test";
 
         // exercise
-        let ok_1 = Value::from(&String::from(&float_text), &Class::Id);
-        let ok_2 = Value::from(&String::from(&integer_text), &Class::Id);
-        let ok_3 = Value::from(&String::from(&id_text), &Class::Id);
+        let ok_1 = Value::from(float, &Class::Id);
+        let ok_2 = Value::from(integer, &Class::Id);
+        let ok_3 = Value::from(id, &Class::Id);
 
         // verify
-        assert_eq!(Value::Id(float_text), ok_1.unwrap());
-        assert_eq!(Value::Id(integer_text), ok_2.unwrap());
-        assert_eq!(Value::Id(id_text), ok_3.unwrap());
+        assert_eq!(Value::Id(String::from(float)), ok_1.unwrap());
+        assert_eq!(Value::Id(String::from(integer)), ok_2.unwrap());
+        assert_eq!(Value::Id(String::from(id)), ok_3.unwrap());
     }
 }
 
@@ -167,7 +158,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(word), &Class::Id).unwrap(),
+                value: Value::from(word, &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
@@ -199,7 +190,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(word), &Class::Id).unwrap(),
+                value: Value::from(word, &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
@@ -208,7 +199,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(word), &Class::Integer).unwrap(),
+                value: Value::from(word, &Class::Integer).unwrap(),
             },
             integer_terms.get(0).unwrap()
         );
@@ -217,7 +208,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(word), &Class::Float).unwrap(),
+                value: Value::from(word, &Class::Float).unwrap(),
             },
             float_terms.get(0).unwrap()
         );
@@ -245,7 +236,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(word), &Class::Id).unwrap(),
+                value: Value::from(word, &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
@@ -256,7 +247,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(word), &Class::Float).unwrap(),
+                value: Value::from(word, &Class::Float).unwrap(),
             },
             float_terms.get(0).unwrap()
         );
@@ -331,35 +322,35 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position0,
-                value: Value::from(&String::from(word0), &Class::Id).unwrap(),
+                value: Value::from(word0, &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position2,
-                value: Value::from(&String::from(word2), &Class::Id).unwrap(),
+                value: Value::from(word2, &Class::Id).unwrap(),
             },
             id_terms.get(1).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position4,
-                value: Value::from(&String::from(word4), &Class::Id).unwrap(),
+                value: Value::from(word4, &Class::Id).unwrap(),
             },
             id_terms.get(2).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position6,
-                value: Value::from(&String::from(word6), &Class::Id).unwrap(),
+                value: Value::from(word6, &Class::Id).unwrap(),
             },
             id_terms.get(3).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position8,
-                value: Value::from(&String::from(word8), &Class::Id).unwrap(),
+                value: Value::from(word8, &Class::Id).unwrap(),
             },
             id_terms.get(4).unwrap()
         );
@@ -426,7 +417,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position2,
-                value: Value::from(&String::from(word2), &Class::Integer).unwrap(),
+                value: Value::from(word2, &Class::Integer).unwrap(),
             },
             integer_terms.get(0).unwrap()
         );
@@ -495,14 +486,14 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position2,
-                value: Value::from(&String::from(word2), &Class::Float).unwrap(),
+                value: Value::from(word2, &Class::Float).unwrap(),
             },
             float_terms.get(0).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position8,
-                value: Value::from(&String::from(word8), &Class::Float).unwrap(),
+                value: Value::from(word8, &Class::Float).unwrap(),
             },
             float_terms.get(1).unwrap()
         );
