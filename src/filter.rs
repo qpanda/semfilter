@@ -97,7 +97,6 @@ impl<'a> Filter<'a> {
         Ok(lines)
     }
 
-    // TODO consider returning Option<&str>
     fn output_line(&self, tokens: Vec<Token>, matches: &HashSet<Position>) -> Option<String> {
         match self.mode {
             Mode::Filter => match matches.is_empty() {
@@ -112,12 +111,10 @@ impl<'a> Filter<'a> {
         }
     }
 
-    // TODO consider returning Option<&str>
     fn normal_text(&self, tokens: Vec<Token>) -> String {
-        tokens.into_iter().map(|t| t.word).collect::<String>()
+        tokens.into_iter().map(|t| t.word.to_string()).collect()
     }
 
-    // TODO consider returning Option<&str>
     fn highlighted_text(&self, tokens: Vec<Token>, matches: &HashSet<Position>, colour: Colour) -> String {
         tokens
             .into_iter()
@@ -125,7 +122,7 @@ impl<'a> Filter<'a> {
                 true => colour.paint(t.word).to_string(),
                 false => t.word.to_string(),
             })
-            .collect::<String>()
+            .collect()
     }
 }
 
