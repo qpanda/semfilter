@@ -129,6 +129,7 @@ impl<'a> Filter<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tokenizer::Separators;
     use crate::tokenizer::SPACE;
     use file_diff::diff_files;
     use tempfile::NamedTempFile;
@@ -142,7 +143,7 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
-        let separators = vec![String::from(SPACE)];
+        let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$integer == 9";
         let filter = Filter::new(&tokenizer, expression, Mode::Filter, false).unwrap();
@@ -175,7 +176,7 @@ mod tests {
         let mut expected_file = NamedTempFile::new().unwrap();
         writeln!(expected_file, "{}", expected_text).unwrap();
 
-        let separators = vec![String::from(SPACE)];
+        let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
         let filter = Filter::new(&tokenizer, expression, Mode::Highlight(colour), false).unwrap();
@@ -202,7 +203,7 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
-        let separators = vec![String::from(SPACE)];
+        let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
         let filter = Filter::new(&tokenizer, expression, Mode::Highlight(Colour::Red), false).unwrap();
@@ -229,7 +230,7 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
-        let separators = vec![String::from(SPACE)];
+        let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
         let filter = Filter::new(&tokenizer, expression, Mode::Filter, false).unwrap();
@@ -256,7 +257,7 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
-        let separators = vec![String::from(SPACE)];
+        let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
         let filter = Filter::new(&tokenizer, expression, Mode::Filter, false).unwrap();
@@ -289,7 +290,7 @@ mod tests {
         let mut expected_file = NamedTempFile::new().unwrap();
         writeln!(expected_file, "{}", expected_text).unwrap();
 
-        let separators = vec![String::from(SPACE)];
+        let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
         let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(colour), false).unwrap();
@@ -316,7 +317,7 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
-        let separators = vec![String::from(SPACE)];
+        let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
         let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(Colour::Red), false).unwrap();

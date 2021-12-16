@@ -1,5 +1,6 @@
 use crate::filter::Mode;
 use crate::filter::{FILTER, FILTER_HIGHLIGHT, HIGHLIGHT};
+use crate::tokenizer::Separators;
 use crate::tokenizer::{COMMA, PIPE, SEMICOLON, SPACE, WHITESPACE};
 use anyhow::{Context, Error};
 use clap::{App, Arg};
@@ -13,7 +14,7 @@ pub struct Arguments {
     pub mode: Mode,
     pub count: bool,
     pub expression: String,
-    pub separators: Vec<String>,
+    pub separators: Separators,
 }
 
 impl Arguments {
@@ -88,8 +89,8 @@ impl Arguments {
             }
         };
         let separators = match argument_matches.values_of(separator_argument) {
-            None => vec![String::from(WHITESPACE)],
-            Some(separator) => separator.map(|s| String::from(s)).collect::<Vec<String>>(),
+            None => Separators::new(vec![WHITESPACE])?,
+            Some(separator) => Separators::new(separator.collect())?,
         };
         let mode = match argument_matches.value_of(mode_argument) {
             None => Mode::from_str(FILTER_HIGHLIGHT)?,
