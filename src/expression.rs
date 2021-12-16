@@ -162,17 +162,17 @@ mod tests {
             Token {
                 position: 0,
                 separator: false,
-                text: String::from("a1"),
+                word: "a1",
             },
             Token {
                 position: 1,
                 separator: false,
-                text: String::from("9"),
+                word: "9",
             },
             Token {
                 position: 2,
                 separator: false,
-                text: String::from("5.5"),
+                word: "5.5",
             },
         ];
 

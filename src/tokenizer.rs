@@ -10,10 +10,10 @@ pub const PIPE: &str = "|";
 pub type Position = usize;
 
 #[derive(Debug, PartialEq)]
-pub struct Token {
+pub struct Token<'a> {
     pub position: Position,
     pub separator: bool,
-    pub text: String, // TODO could make this a &str to improve performance
+    pub word: &'a str,
 }
 
 pub struct Tokenizer {
@@ -49,7 +49,7 @@ impl Tokenizer {
     }
 
     // https://stackoverflow.com/questions/32257273/
-    pub fn tokens(&self, line: &str) -> Vec<Token> {
+    pub fn tokens<'a>(&self, line: &'a str) -> Vec<Token<'a>> {
         let mut tokens = Vec::new();
 
         let mut last = 0;
@@ -59,14 +59,14 @@ impl Tokenizer {
                 tokens.push(Token {
                     position: position,
                     separator: false,
-                    text: String::from(&line[last..index]),
+                    word: &line[last..index],
                 });
                 position += 1;
             }
             tokens.push(Token {
                 position: position,
                 separator: true,
-                text: String::from(seperator),
+                word: seperator,
             });
             position += 1;
             last = index + seperator.len();
@@ -75,7 +75,7 @@ impl Tokenizer {
             tokens.push(Token {
                 position: position,
                 separator: false,
-                text: String::from(&line[last..line.len()]),
+                word: &line[last..line.len()],
             });
         }
 
@@ -135,7 +135,7 @@ mod tests {
             &[Token {
                 position: 0,
                 separator: false,
-                text: String::from("test")
+                word: "test"
             }]
         );
     }
@@ -155,7 +155,7 @@ mod tests {
             &[Token {
                 position: 0,
                 separator: true,
-                text: String::from(" ")
+                word: " "
             }]
         );
     }
@@ -176,12 +176,12 @@ mod tests {
                 Token {
                     position: 0,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 1,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 }
             ]
         );
@@ -203,17 +203,17 @@ mod tests {
                 Token {
                     position: 0,
                     separator: false,
-                    text: String::from("a")
+                    word: "a"
                 },
                 Token {
                     position: 1,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 2,
                     separator: false,
-                    text: String::from("b")
+                    word: "b"
                 }
             ]
         );
@@ -235,22 +235,22 @@ mod tests {
                 Token {
                     position: 0,
                     separator: false,
-                    text: String::from("a")
+                    word: "a"
                 },
                 Token {
                     position: 1,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 2,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 3,
                     separator: false,
-                    text: String::from("b")
+                    word: "b"
                 }
             ]
         );
@@ -272,17 +272,17 @@ mod tests {
                 Token {
                     position: 0,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 1,
                     separator: false,
-                    text: String::from("a")
+                    word: "a"
                 },
                 Token {
                     position: 2,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 }
             ]
         );
@@ -304,27 +304,27 @@ mod tests {
                 Token {
                     position: 0,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 1,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 2,
                     separator: false,
-                    text: String::from("a")
+                    word: "a"
                 },
                 Token {
                     position: 3,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 4,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 }
             ]
         );
@@ -346,47 +346,47 @@ mod tests {
                 Token {
                     position: 0,
                     separator: false,
-                    text: String::from("this")
+                    word: "this"
                 },
                 Token {
                     position: 1,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 2,
                     separator: false,
-                    text: String::from("is")
+                    word: "is"
                 },
                 Token {
                     position: 3,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 4,
                     separator: false,
-                    text: String::from("a")
+                    word: "a"
                 },
                 Token {
                     position: 5,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 6,
                     separator: false,
-                    text: String::from("simple")
+                    word: "simple"
                 },
                 Token {
                     position: 7,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 8,
                     separator: false,
-                    text: String::from("line")
+                    word: "line"
                 }
             ]
         );
@@ -408,17 +408,17 @@ mod tests {
                 Token {
                     position: 0,
                     separator: false,
-                    text: String::from("a")
+                    word: "a"
                 },
                 Token {
                     position: 1,
                     separator: true,
-                    text: String::from(",")
+                    word: ","
                 },
                 Token {
                     position: 2,
                     separator: false,
-                    text: String::from("b")
+                    word: "b"
                 }
             ]
         );
@@ -440,17 +440,17 @@ mod tests {
                 Token {
                     position: 0,
                     separator: false,
-                    text: String::from("a")
+                    word: "a"
                 },
                 Token {
                     position: 1,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 2,
                     separator: false,
-                    text: String::from("b")
+                    word: "b"
                 }
             ]
         );
@@ -472,27 +472,27 @@ mod tests {
                 Token {
                     position: 0,
                     separator: false,
-                    text: String::from("a")
+                    word: "a"
                 },
                 Token {
                     position: 1,
                     separator: true,
-                    text: String::from(",")
+                    word: ","
                 },
                 Token {
                     position: 2,
                     separator: false,
-                    text: String::from("b")
+                    word: "b"
                 },
                 Token {
                     position: 3,
                     separator: true,
-                    text: String::from(" ")
+                    word: " "
                 },
                 Token {
                     position: 4,
                     separator: false,
-                    text: String::from("c")
+                    word: "c"
                 }
             ]
         );

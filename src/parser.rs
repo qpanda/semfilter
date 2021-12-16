@@ -23,6 +23,7 @@ pub struct Term {
 }
 
 impl Value {
+    // TODO consider changing text: &String to text: &str
     pub fn from(text: &String, class: &Class) -> Result<Self, Error> {
         match class {
             Class::Integer => match text.parse::<i64>() {
@@ -43,7 +44,7 @@ impl Term {
         let mut result = Vec::new();
         for token in tokens {
             if !token.separator {
-                if let Ok(value) = Value::from(&token.text, class) {
+                if let Ok(value) = Value::from(&token.word.to_string(), class) {
                     result.push(Term {
                         position: token.position,
                         value: value,
@@ -129,7 +130,7 @@ mod term_tests {
         let separator_token = Token {
             position: 0,
             separator: true,
-            text: String::from(" "),
+            word: " ",
         };
         let tokens = vec![separator_token];
 
@@ -147,12 +148,12 @@ mod term_tests {
     #[test]
     fn from_text() {
         // setup
-        let text = "text";
+        let word = "text";
         let position = 0;
         let text_token = Token {
             position: position,
             separator: false,
-            text: String::from(text),
+            word: word,
         };
         let tokens = vec![text_token];
 
@@ -166,7 +167,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(text), &Class::Id).unwrap(),
+                value: Value::from(&String::from(word), &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
@@ -179,12 +180,12 @@ mod term_tests {
     #[test]
     fn from_integer() {
         // setup
-        let text = "8";
+        let word = "8";
         let position = 0;
         let integer_token = Token {
             position: position,
             separator: false,
-            text: String::from(text),
+            word: word,
         };
         let tokens = vec![integer_token];
 
@@ -198,7 +199,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(text), &Class::Id).unwrap(),
+                value: Value::from(&String::from(word), &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
@@ -207,7 +208,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(text), &Class::Integer).unwrap(),
+                value: Value::from(&String::from(word), &Class::Integer).unwrap(),
             },
             integer_terms.get(0).unwrap()
         );
@@ -216,7 +217,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(text), &Class::Float).unwrap(),
+                value: Value::from(&String::from(word), &Class::Float).unwrap(),
             },
             float_terms.get(0).unwrap()
         );
@@ -225,12 +226,12 @@ mod term_tests {
     #[test]
     fn from_float() {
         // setup
-        let text = "5.5";
+        let word = "5.5";
         let position = 0;
         let float_token = Token {
             position: position,
             separator: false,
-            text: String::from(text),
+            word: word,
         };
         let tokens = vec![float_token];
 
@@ -244,7 +245,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(text), &Class::Id).unwrap(),
+                value: Value::from(&String::from(word), &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
@@ -255,7 +256,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(&String::from(text), &Class::Float).unwrap(),
+                value: Value::from(&String::from(word), &Class::Float).unwrap(),
             },
             float_terms.get(0).unwrap()
         );
@@ -269,56 +270,56 @@ mod term_tests {
         let position4 = 4;
         let position6 = 6;
         let position8 = 8;
-        let text0 = "integer";
-        let text2 = "8";
-        let text4 = "and";
-        let text6 = "float";
-        let text8 = "5.5";
+        let word0 = "integer";
+        let word2 = "8";
+        let word4 = "and";
+        let word6 = "float";
+        let word8 = "5.5";
         let tokens = vec![
             Token {
                 position: position0,
                 separator: false,
-                text: String::from(text0),
+                word: word0,
             },
             Token {
                 position: 1,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: position2,
                 separator: false,
-                text: String::from(text2),
+                word: word2,
             },
             Token {
                 position: 3,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: position4,
                 separator: false,
-                text: String::from(text4),
+                word: word4,
             },
             Token {
                 position: 5,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: position6,
                 separator: false,
-                text: String::from(text6),
+                word: word6,
             },
             Token {
                 position: 7,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: position8,
                 separator: false,
-                text: String::from(text8),
+                word: word8,
             },
         ];
 
@@ -330,35 +331,35 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position0,
-                value: Value::from(&String::from(text0), &Class::Id).unwrap(),
+                value: Value::from(&String::from(word0), &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position2,
-                value: Value::from(&String::from(text2), &Class::Id).unwrap(),
+                value: Value::from(&String::from(word2), &Class::Id).unwrap(),
             },
             id_terms.get(1).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position4,
-                value: Value::from(&String::from(text4), &Class::Id).unwrap(),
+                value: Value::from(&String::from(word4), &Class::Id).unwrap(),
             },
             id_terms.get(2).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position6,
-                value: Value::from(&String::from(text6), &Class::Id).unwrap(),
+                value: Value::from(&String::from(word6), &Class::Id).unwrap(),
             },
             id_terms.get(3).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position8,
-                value: Value::from(&String::from(text8), &Class::Id).unwrap(),
+                value: Value::from(&String::from(word8), &Class::Id).unwrap(),
             },
             id_terms.get(4).unwrap()
         );
@@ -368,52 +369,52 @@ mod term_tests {
     fn to_integer() {
         // setup
         let position2 = 2;
-        let text2 = "8";
+        let word2 = "8";
         let tokens = vec![
             Token {
                 position: 0,
                 separator: false,
-                text: String::from("integer"),
+                word: "integer",
             },
             Token {
                 position: 1,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: position2,
                 separator: false,
-                text: String::from(text2),
+                word: word2,
             },
             Token {
                 position: 3,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: 4,
                 separator: false,
-                text: String::from("and"),
+                word: "and",
             },
             Token {
                 position: 5,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: 6,
                 separator: false,
-                text: String::from("float"),
+                word: "float",
             },
             Token {
                 position: 7,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: 8,
                 separator: false,
-                text: String::from("5.5"),
+                word: "5.5",
             },
         ];
 
@@ -425,7 +426,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position2,
-                value: Value::from(&String::from(text2), &Class::Integer).unwrap(),
+                value: Value::from(&String::from(word2), &Class::Integer).unwrap(),
             },
             integer_terms.get(0).unwrap()
         );
@@ -436,53 +437,53 @@ mod term_tests {
         // setup
         let position2 = 2;
         let position8 = 8;
-        let text2 = "8";
-        let text8 = "5.5";
+        let word2 = "8";
+        let word8 = "5.5";
         let tokens = vec![
             Token {
                 position: 0,
                 separator: false,
-                text: String::from("integer"),
+                word: "integer",
             },
             Token {
                 position: 1,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: position2,
                 separator: false,
-                text: String::from(text2),
+                word: word2,
             },
             Token {
                 position: 3,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: 4,
                 separator: false,
-                text: String::from("and"),
+                word: "and",
             },
             Token {
                 position: 5,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: 6,
                 separator: false,
-                text: String::from("float"),
+                word: "float",
             },
             Token {
                 position: 7,
                 separator: true,
-                text: String::from(" "),
+                word: " ",
             },
             Token {
                 position: position8,
                 separator: false,
-                text: String::from(text8),
+                word: word8,
             },
         ];
 
@@ -494,14 +495,14 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position2,
-                value: Value::from(&String::from(text2), &Class::Float).unwrap(),
+                value: Value::from(&String::from(word2), &Class::Float).unwrap(),
             },
             float_terms.get(0).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position8,
-                value: Value::from(&String::from(text8), &Class::Float).unwrap(),
+                value: Value::from(&String::from(word8), &Class::Float).unwrap(),
             },
             float_terms.get(1).unwrap()
         );

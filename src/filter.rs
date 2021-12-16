@@ -114,7 +114,7 @@ impl<'a> Filter<'a> {
 
     // TODO consider returning Option<&str>
     fn normal_text(&self, tokens: Vec<Token>) -> String {
-        tokens.into_iter().map(|t| t.text).collect::<String>()
+        tokens.into_iter().map(|t| t.word).collect::<String>()
     }
 
     // TODO consider returning Option<&str>
@@ -122,8 +122,8 @@ impl<'a> Filter<'a> {
         tokens
             .into_iter()
             .map(|t| match matches.contains(&t.position) {
-                true => colour.paint(t.text).to_string(),
-                false => t.text,
+                true => colour.paint(t.word).to_string(),
+                false => t.word.to_string(),
             })
             .collect::<String>()
     }
