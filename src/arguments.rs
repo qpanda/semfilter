@@ -1,5 +1,6 @@
 use crate::filter::Mode;
 use crate::filter::{FILTER, FILTER_HIGHLIGHT, HIGHLIGHT};
+use crate::tokenizer::{COMMA, PIPE, SEMICOLON, SPACE, WHITESPACE};
 use anyhow::{Context, Error};
 use clap::{App, Arg};
 use std::fs::File;
@@ -12,19 +13,20 @@ pub struct Arguments {
     pub mode: Mode,
     pub count: bool,
     pub expression: String,
+    pub separators: Vec<String>,
 }
 
 impl Arguments {
     pub fn parse() -> Result<Self, Error> {
-        // TODO parameters --separator with values "[:space:]", ",", ...
         let input_argument = "input";
         let output_argument = "output";
+        let separator_argument = "separator";
         let mode_argument = "mode";
         let count_argument = "count";
         let expression_argument = "expression";
         let semfilter_command = App::new("semfilter")
             .version("0.1")
-            .about("semantic filter") // TODO description
+            .about("semfilter filters unstructured text by matching tokens found on each input lines against an expression")
             .arg(
                 Arg::with_name(input_argument)
                     .short("i")
@@ -38,6 +40,16 @@ impl Arguments {
                     .long("output-file")
                     .value_name("output-file")
                     .help("Output file to write (stdout if not specified)"),
+            )
+            .arg(
+                Arg::with_name(separator_argument)
+                    .short("s")
+                    .long("separator")
+                    .multiple(true)
+                    .number_of_values(1)
+                    .default_value(WHITESPACE)
+                    .possible_values(&[SPACE, COMMA, SEMICOLON, PIPE, WHITESPACE])
+                    .help("separator(s) used to split input line into tokens"),
             )
             .arg(
                 Arg::with_name(mode_argument)
@@ -75,16 +87,24 @@ impl Arguments {
                 Box::new(File::open(output_file).context(format!("Failed to open output-file '{}'", output_file))?)
             }
         };
-        let mode = Mode::from_str(argument_matches.value_of(mode_argument).unwrap())?;
+        let separators = match argument_matches.values_of(separator_argument) {
+            None => vec![String::from(WHITESPACE)],
+            Some(separator) => separator.map(|s| String::from(s)).collect::<Vec<String>>(),
+        };
+        let mode = match argument_matches.value_of(mode_argument) {
+            None => Mode::from_str(FILTER_HIGHLIGHT)?,
+            Some(mode) => Mode::from_str(mode)?,
+        };
         let count = argument_matches.is_present(count_argument);
         let expression = String::from(argument_matches.value_of(expression_argument).unwrap());
 
-        return Ok(Arguments {
+        Ok(Arguments {
             input: input,
             output: output,
             mode: mode,
             count: count,
             expression: expression,
-        });
+            separators: separators,
+        })
     }
 }

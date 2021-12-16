@@ -12,7 +12,7 @@ use crate::tokenizer::Tokenizer;
 
 fn main() -> Result<(), Error> {
     let mut arguments = Arguments::parse().context("Invalid command arguments")?;
-    let tokenizer = Tokenizer::new();
+    let tokenizer = Tokenizer::new(arguments.separators).context("Initializing tokenizer failed")?;
     let filter = Filter::new(&tokenizer, &arguments.expression, arguments.mode, arguments.count)
         .context("Initializing filter failed")?;
     filter
