@@ -141,6 +141,19 @@ impl<'a> Filter<'a> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use super::*;
+
+    pub fn default_formats() -> Formats {
+        Formats {
+            date: String::from(DATE_FORMAT),
+            time: String::from(TIME_FORMAT),
+            date_time: String::from(DATE_TIME_FORMAT),
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::tokenizer::Separators;
@@ -161,11 +174,7 @@ mod tests {
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$integer == 9";
         let settings = Settings {
-            formats: Formats {
-                date: String::from(DATE_FORMAT),
-                time: String::from(TIME_FORMAT),
-                date_time: String::from(DATE_TIME_FORMAT),
-            },
+            formats: test_utils::default_formats(),
             mode: Mode::Filter,
             count: false,
         };
@@ -203,11 +212,7 @@ mod tests {
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
         let settings = Settings {
-            formats: Formats {
-                date: String::from(DATE_FORMAT),
-                time: String::from(TIME_FORMAT),
-                date_time: String::from(DATE_TIME_FORMAT),
-            },
+            formats: test_utils::default_formats(),
             mode: Mode::Highlight(colour),
             count: false,
         };
@@ -239,11 +244,7 @@ mod tests {
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
         let settings = Settings {
-            formats: Formats {
-                date: String::from(DATE_FORMAT),
-                time: String::from(TIME_FORMAT),
-                date_time: String::from(DATE_TIME_FORMAT),
-            },
+            formats: test_utils::default_formats(),
             mode: Mode::Highlight(Colour::Red),
             count: false,
         };
@@ -275,11 +276,7 @@ mod tests {
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
         let settings = Settings {
-            formats: Formats {
-                date: String::from(DATE_FORMAT),
-                time: String::from(TIME_FORMAT),
-                date_time: String::from(DATE_TIME_FORMAT),
-            },
+            formats: test_utils::default_formats(),
             mode: Mode::Filter,
             count: false,
         };
@@ -311,11 +308,7 @@ mod tests {
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
         let settings = Settings {
-            formats: Formats {
-                date: String::from(DATE_FORMAT),
-                time: String::from(TIME_FORMAT),
-                date_time: String::from(DATE_TIME_FORMAT),
-            },
+            formats: test_utils::default_formats(),
             mode: Mode::Filter,
             count: false,
         };
@@ -353,11 +346,7 @@ mod tests {
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
         let settings = Settings {
-            formats: Formats {
-                date: String::from(DATE_FORMAT),
-                time: String::from(TIME_FORMAT),
-                date_time: String::from(DATE_TIME_FORMAT),
-            },
+            formats: test_utils::default_formats(),
             mode: Mode::FilterHighlight(colour),
             count: false,
         };
@@ -389,11 +378,7 @@ mod tests {
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
         let settings = Settings {
-            formats: Formats {
-                date: String::from(DATE_FORMAT),
-                time: String::from(TIME_FORMAT),
-                date_time: String::from(DATE_TIME_FORMAT),
-            },
+            formats: test_utils::default_formats(),
             mode: Mode::FilterHighlight(Colour::Red),
             count: false,
         };

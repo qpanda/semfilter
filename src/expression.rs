@@ -141,7 +141,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filter::{DATE_FORMAT, DATE_TIME_FORMAT, TIME_FORMAT};
+    use crate::filter::test_utils;
 
     #[test]
     fn integer_matches() {
@@ -186,57 +186,33 @@ mod tests {
 
     #[test]
     fn invalid_integer_conditions() {
-        // setup
-        let formats = Formats {
-            date: String::from(DATE_FORMAT),
-            time: String::from(TIME_FORMAT),
-            date_time: String::from(DATE_TIME_FORMAT),
-        };
-
-        // exercise & verify
-        assert!(expression::evaluate("$integer + 9", &vec![], &formats).is_err());
-        assert!(expression::evaluate("wrong == 9", &vec![], &formats).is_err());
-        assert!(expression::evaluate("$integer == a", &vec![], &formats).is_err());
+        assert!(expression::evaluate("$integer + 9", &vec![], &test_utils::default_formats()).is_err());
+        assert!(expression::evaluate("wrong == 9", &vec![], &test_utils::default_formats()).is_err());
+        assert!(expression::evaluate("$integer == a", &vec![], &test_utils::default_formats()).is_err());
     }
 
     #[test]
     fn valid_integer_conditions() {
-        // setup
-        let formats = Formats {
-            date: String::from(DATE_FORMAT),
-            time: String::from(TIME_FORMAT),
-            date_time: String::from(DATE_TIME_FORMAT),
-        };
-
-        // exercise & verify
-        assert!(expression::evaluate("$integer == 9", &vec![], &formats).is_ok());
-        assert!(expression::evaluate("$integer != 9", &vec![], &formats).is_ok());
-        assert!(expression::evaluate("$integer > 9", &vec![], &formats).is_ok());
-        assert!(expression::evaluate("$integer >= 9", &vec![], &formats).is_ok());
-        assert!(expression::evaluate("$integer < 9", &vec![], &formats).is_ok());
-        assert!(expression::evaluate("$integer <= 9", &vec![], &formats).is_ok());
+        assert!(expression::evaluate("$integer == 9", &vec![], &test_utils::default_formats()).is_ok());
+        assert!(expression::evaluate("$integer != 9", &vec![], &test_utils::default_formats()).is_ok());
+        assert!(expression::evaluate("$integer > 9", &vec![], &test_utils::default_formats()).is_ok());
+        assert!(expression::evaluate("$integer >= 9", &vec![], &test_utils::default_formats()).is_ok());
+        assert!(expression::evaluate("$integer < 9", &vec![], &test_utils::default_formats()).is_ok());
+        assert!(expression::evaluate("$integer <= 9", &vec![], &test_utils::default_formats()).is_ok());
     }
 
     #[test]
     fn evaluate_expression_no_tokens() {
-        // setup
-        let formats = Formats {
-            date: String::from(DATE_FORMAT),
-            time: String::from(TIME_FORMAT),
-            date_time: String::from(DATE_TIME_FORMAT),
-        };
-
-        // exercise & verify
         assert_eq!(
-            expression::evaluate("$integer == 9", &vec![], &formats),
+            expression::evaluate("$integer == 9", &vec![], &test_utils::default_formats()),
             Ok(HashSet::new())
         );
         assert_eq!(
-            expression::evaluate("$integer != 9", &vec![], &formats),
+            expression::evaluate("$integer != 9", &vec![], &test_utils::default_formats()),
             Ok(HashSet::new())
         );
         assert_eq!(
-            expression::evaluate("$float > 1.0", &vec![], &formats),
+            expression::evaluate("$float > 1.0", &vec![], &test_utils::default_formats()),
             Ok(HashSet::new())
         );
     }
@@ -276,11 +252,7 @@ mod tests {
                 word: "2001-07-08T00:34:60.026490+09:30",
             },
         ];
-        let formats = Formats {
-            date: String::from(DATE_FORMAT),
-            time: String::from(TIME_FORMAT),
-            date_time: String::from(DATE_TIME_FORMAT),
-        };
+        let formats = test_utils::default_formats();
 
         // exercise & verify
         assert_eq!(
