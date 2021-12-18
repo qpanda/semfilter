@@ -1,5 +1,5 @@
 use crate::filter::{Formats, Mode, Settings};
-use crate::filter::{DATE_FORMAT, TIME_FORMAT};
+use crate::filter::{DATE_FORMAT, DATE_TIME_FORMAT, TIME_FORMAT};
 use crate::filter::{FILTER, FILTER_HIGHLIGHT, HIGHLIGHT};
 use crate::tokenizer::Separators;
 use crate::tokenizer::{COMMA, PIPE, SEMICOLON, SPACE, WHITESPACE};
@@ -27,6 +27,7 @@ impl Arguments {
         let count_argument = "count";
         let date_format = "date-format";
         let time_format = "time-format";
+        let date_time_format = "date-time-format";
         let expression_argument = "expression";
         let semfilter_command = App::new("semfilter")
             .version("0.1")
@@ -88,6 +89,14 @@ impl Arguments {
                     .help("Time format using chrono::format::strftime specifiers (must not include separators)"),
             )
             .arg(
+                Arg::with_name(date_time_format)
+                    .long("date-time-format")
+                    .value_name("date-time-format")
+                    .default_value(DATE_TIME_FORMAT)
+                    .validator(Arguments::validate_strftime)
+                    .help("DateTime format using chrono::format::strftime specifiers (must not include separators)"),
+            )
+            .arg(
                 Arg::with_name(expression_argument)
                     .help("Filter expression")
                     .required(true)
@@ -112,13 +121,26 @@ impl Arguments {
         let count = argument_matches.is_present(count_argument);
         let date_format = argument_matches.value_of(date_format).unwrap();
         let time_format = argument_matches.value_of(time_format).unwrap();
+        let date_time_format = argument_matches.value_of(date_time_format).unwrap();
         let expression = String::from(argument_matches.value_of(expression_argument).unwrap());
 
         if separators.comprise_any(date_format.chars()) {
-            return Err(anyhow!("Date format '{}' must not contain separators", date_format));
+            return Err(anyhow!(
+                "Date format string '{}' must not contain separators",
+                date_format
+            ));
         }
         if separators.comprise_any(time_format.chars()) {
-            return Err(anyhow!("Time format '{}' must not contain separators", date_format));
+            return Err(anyhow!(
+                "Time format string '{}' must not contain separators",
+                date_format
+            ));
+        }
+        if separators.comprise_any(date_time_format.chars()) {
+            return Err(anyhow!(
+                "DateTime format string '{}' must not contain separators",
+                date_time_format
+            ));
         }
 
         Ok(Arguments {
@@ -130,6 +152,7 @@ impl Arguments {
                 formats: Formats {
                     date: String::from(date_format),
                     time: String::from(time_format),
+                    date_time: String::from(date_time_format),
                 },
                 mode: mode,
                 count: count,

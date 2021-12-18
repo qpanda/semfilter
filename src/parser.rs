@@ -1,5 +1,5 @@
 use anyhow::Error;
-use chrono::{NaiveDate, NaiveTime};
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime};
 
 use crate::tokenizer::Position;
 use crate::tokenizer::Token;
@@ -10,6 +10,7 @@ pub enum Class {
     Id,
     Date(String),
     Time(String),
+    DateTime(String),
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
@@ -19,6 +20,7 @@ pub enum Value {
     Id(String),
     Date(NaiveDate),
     Time(NaiveTime),
+    DateTime(DateTime<FixedOffset>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -45,6 +47,10 @@ impl Value {
             },
             Class::Time(format) => match NaiveTime::parse_from_str(word, format) {
                 Ok(time) => Ok(Value::Time(time)),
+                Err(error) => Err(error.into()),
+            },
+            Class::DateTime(format) => match DateTime::parse_from_str(word, format) {
+                Ok(date_time) => Ok(Value::DateTime(date_time)),
                 Err(error) => Err(error.into()),
             },
         }
@@ -153,6 +159,24 @@ mod value_tests {
 
         // verify
         assert_eq!(Value::Time(time), ok_1.unwrap());
+        assert_eq!(true, err_1.is_err());
+        assert_eq!(true, err_2.is_err());
+    }
+
+    #[test]
+    fn new_date_time() {
+        // setup
+        let format = "%+";
+        let date_time_string = "2001-07-08T00:34:60.026490+09:30";
+        let date_time = DateTime::parse_from_str(date_time_string, format).unwrap();
+
+        // exercise
+        let ok_1 = Value::from(&date_time_string, &Class::DateTime(String::from(format)));
+        let err_1 = Value::from("5.5", &Class::DateTime(String::from(format)));
+        let err_2 = Value::from("2001-07-08 00:34:60", &Class::DateTime(String::from(format)));
+
+        // verify
+        assert_eq!(Value::DateTime(date_time), ok_1.unwrap());
         assert_eq!(true, err_1.is_err());
         assert_eq!(true, err_2.is_err());
     }
