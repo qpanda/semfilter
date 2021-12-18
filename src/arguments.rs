@@ -1,5 +1,5 @@
 use crate::filter::{Formats, Mode, Settings};
-use crate::filter::{DATE_FORMAT, DATE_TIME_FORMAT, TIME_FORMAT};
+use crate::filter::{DATE_FORMAT, DATE_TIME_FORMAT, LOCAL_DATE_TIME_FORMAT, TIME_FORMAT};
 use crate::filter::{FILTER, FILTER_HIGHLIGHT, HIGHLIGHT};
 use crate::tokenizer::Separators;
 use crate::tokenizer::{COMMA, PIPE, SEMICOLON, SPACE, WHITESPACE};
@@ -28,6 +28,7 @@ impl Arguments {
         let date_format = "date-format";
         let time_format = "time-format";
         let date_time_format = "date-time-format";
+        let local_date_time_format = "local-date-time-format";
         let expression_argument = "expression";
         let semfilter_command = App::new("semfilter")
             .version("0.1")
@@ -97,6 +98,14 @@ impl Arguments {
                     .help("DateTime format using chrono::format::strftime specifiers (must not include separators)"),
             )
             .arg(
+                Arg::with_name(local_date_time_format)
+                    .long("local-date-time-format")
+                    .value_name("local-date-time-format")
+                    .default_value(LOCAL_DATE_TIME_FORMAT)
+                    .validator(Arguments::validate_strftime)
+                    .help("LocalDateTime format using chrono::format::strftime specifiers (must not include separators)"),
+            )
+            .arg(
                 Arg::with_name(expression_argument)
                     .help("Filter expression")
                     .required(true)
@@ -122,6 +131,7 @@ impl Arguments {
         let date_format = argument_matches.value_of(date_format).unwrap();
         let time_format = argument_matches.value_of(time_format).unwrap();
         let date_time_format = argument_matches.value_of(date_time_format).unwrap();
+        let local_date_time_format = argument_matches.value_of(local_date_time_format).unwrap();
         let expression = String::from(argument_matches.value_of(expression_argument).unwrap());
 
         if separators.comprise_any(date_format.chars()) {
@@ -142,6 +152,12 @@ impl Arguments {
                 date_time_format
             ));
         }
+        if separators.comprise_any(local_date_time_format.chars()) {
+            return Err(anyhow!(
+                "LocalDateTime format string '{}' must not contain separators",
+                local_date_time_format
+            ));
+        }
 
         Ok(Arguments {
             input: input,
@@ -153,6 +169,7 @@ impl Arguments {
                     date: String::from(date_format),
                     time: String::from(time_format),
                     date_time: String::from(date_time_format),
+                    local_date_time: String::from(local_date_time_format),
                 },
                 mode: mode,
                 count: count,

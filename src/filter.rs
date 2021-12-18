@@ -36,11 +36,13 @@ impl FromStr for Mode {
 pub const DATE_FORMAT: &str = "%F";
 pub const TIME_FORMAT: &str = "%T";
 pub const DATE_TIME_FORMAT: &str = "%+";
+pub const LOCAL_DATE_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S%.f";
 
 pub struct Formats {
     pub date: String,
     pub time: String,
     pub date_time: String,
+    pub local_date_time: String,
 }
 
 pub struct Settings {
@@ -149,6 +151,7 @@ pub mod test_utils {
             date: String::from(DATE_FORMAT),
             time: String::from(TIME_FORMAT),
             date_time: String::from(DATE_TIME_FORMAT),
+            local_date_time: String::from(LOCAL_DATE_TIME_FORMAT),
         }
     }
 }

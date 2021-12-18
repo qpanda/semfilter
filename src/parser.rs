@@ -1,5 +1,5 @@
 use anyhow::Error;
-use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime};
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
 
 use crate::tokenizer::Position;
 use crate::tokenizer::Token;
@@ -11,6 +11,7 @@ pub enum Class {
     Date(String),
     Time(String),
     DateTime(String),
+    LocalDateTime(String),
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
@@ -21,6 +22,7 @@ pub enum Value {
     Date(NaiveDate),
     Time(NaiveTime),
     DateTime(DateTime<FixedOffset>),
+    LocalDateTime(NaiveDateTime),
 }
 
 #[derive(Debug, PartialEq)]
@@ -51,6 +53,10 @@ impl Value {
             },
             Class::DateTime(format) => match DateTime::parse_from_str(word, format) {
                 Ok(date_time) => Ok(Value::DateTime(date_time)),
+                Err(error) => Err(error.into()),
+            },
+            Class::LocalDateTime(format) => match NaiveDateTime::parse_from_str(word, format) {
+                Ok(local_date_time) => Ok(Value::LocalDateTime(local_date_time)),
                 Err(error) => Err(error.into()),
             },
         }
@@ -177,6 +183,24 @@ mod value_tests {
 
         // verify
         assert_eq!(Value::DateTime(date_time), ok_1.unwrap());
+        assert_eq!(true, err_1.is_err());
+        assert_eq!(true, err_2.is_err());
+    }
+
+    #[test]
+    fn new_local_date_time() {
+        // setup
+        let format = "%Y-%m-%dT%H:%M:%S%.f";
+        let local_date_time_string = "2001-07-08T00:34:60.026490";
+        let local_date_time = NaiveDateTime::parse_from_str(local_date_time_string, format).unwrap();
+
+        // exercise
+        let ok_1 = Value::from(&local_date_time_string, &Class::LocalDateTime(String::from(format)));
+        let err_1 = Value::from("5.5", &Class::LocalDateTime(String::from(format)));
+        let err_2 = Value::from("2001-07-08 00:34:60", &Class::LocalDateTime(String::from(format)));
+
+        // verify
+        assert_eq!(Value::LocalDateTime(local_date_time), ok_1.unwrap());
         assert_eq!(true, err_1.is_err());
         assert_eq!(true, err_2.is_err());
     }

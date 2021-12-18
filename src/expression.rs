@@ -20,6 +20,7 @@ peg::parser!(pub grammar expression() for str {
         / date_condition(tokens, formats)
         / time_condition(tokens, formats)
         / date_time_condition(tokens, formats)
+        / local_date_time_condition(tokens, formats)
 
     //
     // conditions
@@ -72,6 +73,14 @@ peg::parser!(pub grammar expression() for str {
     / date_times:date_times(tokens, formats) " < " date_time:date_time(formats) { matches(&date_times, |term| term.value < date_time) }
     / date_times:date_times(tokens, formats) " <= " date_time:date_time(formats) { matches(&date_times, |term| term.value <= date_time) }
 
+    rule local_date_time_condition(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
+    = local_date_times:local_date_times(tokens, formats) " == " local_date_time:local_date_time(formats) { matches(&local_date_times, |term| term.value == local_date_time) }
+    / local_date_times:local_date_times(tokens, formats) " != " local_date_time:local_date_time(formats) { matches(&local_date_times, |term| term.value != local_date_time) }
+    / local_date_times:local_date_times(tokens, formats) " > " local_date_time:local_date_time(formats) { matches(&local_date_times, |term| term.value > local_date_time) }
+    / local_date_times:local_date_times(tokens, formats) " >= " local_date_time:local_date_time(formats) { matches(&local_date_times, |term| term.value >= local_date_time) }
+    / local_date_times:local_date_times(tokens, formats) " < " local_date_time:local_date_time(formats) { matches(&local_date_times, |term| term.value < local_date_time) }
+    / local_date_times:local_date_times(tokens, formats) " <= " local_date_time:local_date_time(formats) { matches(&local_date_times, |term| term.value <= local_date_time) }
+
     //
     // terms
     //
@@ -92,6 +101,9 @@ peg::parser!(pub grammar expression() for str {
 
     rule date_times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term>
         = "$dateTime" { Term::from(tokens, &Class::DateTime(formats.date_time.to_string())) }
+
+    rule local_date_times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term>
+        = "$localDateTime" { Term::from(tokens, &Class::LocalDateTime(formats.local_date_time.to_string())) }
 
     //
     // values
@@ -124,6 +136,11 @@ peg::parser!(pub grammar expression() for str {
     rule date_time(formats: &Formats) -> Value
         = n:$([_]+) {?
             Value::from(n, &Class::DateTime(formats.date_time.to_string())).map_err(|_| "failed to parse dateTime")
+        }
+
+    rule local_date_time(formats: &Formats) -> Value
+        = n:$([_]+) {?
+            Value::from(n, &Class::LocalDateTime(formats.local_date_time.to_string())).map_err(|_| "failed to parse localDateTime")
         }
 });
 
@@ -251,6 +268,11 @@ mod tests {
                 separator: false,
                 word: "2001-07-08T00:34:60.026490+09:30",
             },
+            Token {
+                position: 6,
+                separator: false,
+                word: "2001-07-08T00:34:60.026490",
+            },
         ];
         let formats = test_utils::default_formats();
 
@@ -285,7 +307,7 @@ mod tests {
         );
         assert_eq!(
             expression::evaluate("$id != a1", &tokens, &formats),
-            Ok(HashSet::from([1, 2, 3, 4, 5]))
+            Ok(HashSet::from([1, 2, 3, 4, 5, 6]))
         );
         assert_eq!(
             expression::evaluate("$id == b1", &tokens, &formats),
@@ -326,6 +348,18 @@ mod tests {
         assert_eq!(
             expression::evaluate("$dateTime > 2001-07-08T00:00:00.000000+09:30", &tokens, &formats),
             Ok(HashSet::from([5]))
+        );
+        assert_eq!(
+            expression::evaluate("$localDateTime == 2001-07-08T00:34:60.026490", &tokens, &formats),
+            Ok(HashSet::from([6]))
+        );
+        assert_eq!(
+            expression::evaluate("$localDateTime != 2001-07-08T00:34:60.026490", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("$localDateTime > 2001-07-08T00:00:00.000000", &tokens, &formats),
+            Ok(HashSet::from([6]))
         );
     }
 }
