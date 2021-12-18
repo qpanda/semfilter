@@ -17,6 +17,7 @@ peg::parser!(pub grammar expression() for str {
         = integer_condition(tokens)
         / float_condition(tokens)
         / id_condition(tokens)
+        / date_condition(tokens, formats)
 
     //
     // conditions
@@ -45,6 +46,14 @@ peg::parser!(pub grammar expression() for str {
     / ids:ids(tokens) " < " id:id() { matches(&ids, |term| term.value < id) }
     / ids:ids(tokens) " <= " id:id() { matches(&ids, |term| term.value <= id) }
 
+    rule date_condition(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
+    = dates:dates(tokens, formats) " == " date:date(formats) { matches(&dates, |term| term.value == date) }
+    / dates:dates(tokens, formats) " != " date:date(formats) { matches(&dates, |term| term.value != date) }
+    / dates:dates(tokens, formats) " > " date:date(formats) { matches(&dates, |term| term.value > date) }
+    / dates:dates(tokens, formats) " >= " date:date(formats) { matches(&dates, |term| term.value >= date) }
+    / dates:dates(tokens, formats) " < " date:date(formats) { matches(&dates, |term| term.value < date) }
+    / dates:dates(tokens, formats) " <= " date:date(formats) { matches(&dates, |term| term.value <= date) }
+
     //
     // terms
     //
@@ -56,6 +65,9 @@ peg::parser!(pub grammar expression() for str {
 
     rule ids(tokens: &Vec<Token>) -> Vec<Term>
         = "$id" { Term::from(tokens, &Class::Id) }
+
+    rule dates(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term>
+        = "$date" { Term::from(tokens, &Class::Date(formats.date.to_string())) }
 
     //
     // values
@@ -73,6 +85,11 @@ peg::parser!(pub grammar expression() for str {
     rule id() -> Value
         = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'.'|':'|'_'|'-']+) {?
             Value::from(n, &Class::Id).map_err(|_| "failed to parse id")
+        }
+
+    rule date(formats: &Formats) -> Value
+        = n:$([_]+) {?
+            Value::from(n, &Class::Date(formats.date.to_string())).map_err(|_| "failed to parse date")
         }
 });
 
@@ -203,6 +220,11 @@ mod tests {
                 separator: false,
                 word: "5.5",
             },
+            Token {
+                position: 3,
+                separator: false,
+                word: "2021-01-01",
+            },
         ];
         let formats = Formats {
             date: String::from(DATE_FORMAT),
@@ -239,11 +261,23 @@ mod tests {
         );
         assert_eq!(
             expression::evaluate("$id != a1", &tokens, &formats),
-            Ok(HashSet::from([1, 2]))
+            Ok(HashSet::from([1, 2, 3]))
         );
         assert_eq!(
             expression::evaluate("$id == b1", &tokens, &formats),
             Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("$date == 2021-01-01", &tokens, &formats),
+            Ok(HashSet::from([3]))
+        );
+        assert_eq!(
+            expression::evaluate("$date != 2021-01-01", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("$date > 2000-01-01", &tokens, &formats),
+            Ok(HashSet::from([3]))
         );
     }
 }

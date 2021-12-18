@@ -1,4 +1,5 @@
 use anyhow::Error;
+use chrono::NaiveDate;
 
 use crate::tokenizer::Position;
 use crate::tokenizer::Token;
@@ -7,6 +8,7 @@ pub enum Class {
     Integer,
     Float,
     Id,
+    Date(String),
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
@@ -14,6 +16,7 @@ pub enum Value {
     Integer(i64),
     Float(f64),
     Id(String),
+    Date(NaiveDate),
 }
 
 #[derive(Debug, PartialEq)]
@@ -34,6 +37,10 @@ impl Value {
                 Err(error) => Err(error.into()),
             },
             Class::Id => Ok(Value::Id(String::from(word))),
+            Class::Date(format) => match NaiveDate::parse_from_str(word, format) {
+                Ok(date) => Ok(Value::Date(date)),
+                Err(error) => Err(error.into()),
+            },
         }
     }
 }
@@ -108,6 +115,23 @@ mod value_tests {
         assert_eq!(Value::Id(String::from(float)), ok_1.unwrap());
         assert_eq!(Value::Id(String::from(integer)), ok_2.unwrap());
         assert_eq!(Value::Id(String::from(id)), ok_3.unwrap());
+    }
+
+    #[test]
+    fn new_date() {
+        // setup
+        let format = "%F";
+        let date = NaiveDate::from_ymd(2021, 01, 01);
+
+        // exercise
+        let ok_1 = Value::from(&date.format(format).to_string(), &Class::Date(String::from(format)));
+        let err_1 = Value::from("5.5", &Class::Date(String::from(format)));
+        let err_2 = Value::from("08/08/2021", &Class::Date(String::from(format)));
+
+        // verify
+        assert_eq!(Value::Date(date), ok_1.unwrap());
+        assert_eq!(true, err_1.is_err());
+        assert_eq!(true, err_2.is_err());
     }
 }
 
