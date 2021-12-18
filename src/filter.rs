@@ -33,11 +33,22 @@ impl FromStr for Mode {
     }
 }
 
+pub const DATE_FORMAT: &str = "%F";
+
+pub struct Formats {
+    pub date: String,
+}
+
+pub struct Settings {
+    pub formats: Formats,
+    pub mode: Mode,
+    pub count: bool,
+}
+
 pub struct Filter<'a> {
     tokenizer: &'a Tokenizer,
     expression: &'a str,
-    mode: Mode,
-    count: bool,
+    settings: &'a Settings,
 }
 
 pub struct Lines {
@@ -46,14 +57,13 @@ pub struct Lines {
 }
 
 impl<'a> Filter<'a> {
-    pub fn new(tokenizer: &'a Tokenizer, expression: &'a str, mode: Mode, count: bool) -> Result<Self, Error> {
-        evaluate(expression, &vec![]).context(format!("Invalid filter expression '{}'", expression))?;
+    pub fn new(tokenizer: &'a Tokenizer, expression: &'a str, settings: &'a Settings) -> Result<Self, Error> {
+        evaluate(expression, &vec![], &settings.formats).context(format!("Invalid expression '{}'", expression))?;
 
         Ok(Filter {
             tokenizer: tokenizer,
             expression: expression,
-            mode: mode,
-            count: count,
+            settings: settings,
         })
     }
 
@@ -68,7 +78,7 @@ impl<'a> Filter<'a> {
         for input_line in reader.lines() {
             let input_line = input_line.context(format!("Unable to read line '{}' of input-file", lines.processed))?;
             let tokens = self.tokenizer.tokens(&input_line);
-            let matches = evaluate(self.expression, &tokens).context(format!(
+            let matches = evaluate(self.expression, &tokens, &self.settings.formats).context(format!(
                 "Evaluating expression '{}' for line '{}' of input-file failed",
                 self.expression, lines.processed
             ))?;
@@ -87,7 +97,7 @@ impl<'a> Filter<'a> {
             lines.processed += 1;
         }
 
-        if self.count {
+        if self.settings.count {
             println!(
                 "\n{} line(s) processed, {} line(s) matched",
                 lines.processed, lines.matched
@@ -98,7 +108,7 @@ impl<'a> Filter<'a> {
     }
 
     fn output_line(&self, tokens: Vec<Token>, matches: &HashSet<Position>) -> Option<String> {
-        match self.mode {
+        match self.settings.mode {
             Mode::Filter => match matches.is_empty() {
                 true => None,
                 false => Some(self.normal_text(tokens)),
@@ -146,7 +156,14 @@ mod tests {
         let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$integer == 9";
-        let filter = Filter::new(&tokenizer, expression, Mode::Filter, false).unwrap();
+        let settings = Settings {
+            formats: Formats {
+                date: String::from(DATE_FORMAT),
+            },
+            mode: Mode::Filter,
+            count: false,
+        };
+        let filter = Filter::new(&tokenizer, expression, &settings).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -179,7 +196,14 @@ mod tests {
         let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
-        let filter = Filter::new(&tokenizer, expression, Mode::Highlight(colour), false).unwrap();
+        let settings = Settings {
+            formats: Formats {
+                date: String::from(DATE_FORMAT),
+            },
+            mode: Mode::Highlight(colour),
+            count: false,
+        };
+        let filter = Filter::new(&tokenizer, expression, &settings).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -206,7 +230,14 @@ mod tests {
         let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
-        let filter = Filter::new(&tokenizer, expression, Mode::Highlight(Colour::Red), false).unwrap();
+        let settings = Settings {
+            formats: Formats {
+                date: String::from(DATE_FORMAT),
+            },
+            mode: Mode::Highlight(Colour::Red),
+            count: false,
+        };
+        let filter = Filter::new(&tokenizer, expression, &settings).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -233,7 +264,14 @@ mod tests {
         let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
-        let filter = Filter::new(&tokenizer, expression, Mode::Filter, false).unwrap();
+        let settings = Settings {
+            formats: Formats {
+                date: String::from(DATE_FORMAT),
+            },
+            mode: Mode::Filter,
+            count: false,
+        };
+        let filter = Filter::new(&tokenizer, expression, &settings).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -260,7 +298,14 @@ mod tests {
         let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
-        let filter = Filter::new(&tokenizer, expression, Mode::Filter, false).unwrap();
+        let settings = Settings {
+            formats: Formats {
+                date: String::from(DATE_FORMAT),
+            },
+            mode: Mode::Filter,
+            count: false,
+        };
+        let filter = Filter::new(&tokenizer, expression, &settings).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -293,7 +338,14 @@ mod tests {
         let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
-        let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(colour), false).unwrap();
+        let settings = Settings {
+            formats: Formats {
+                date: String::from(DATE_FORMAT),
+            },
+            mode: Mode::FilterHighlight(colour),
+            count: false,
+        };
+        let filter = Filter::new(&tokenizer, expression, &settings).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();
@@ -320,7 +372,14 @@ mod tests {
         let separators = Separators::new(vec![SPACE]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
-        let filter = Filter::new(&tokenizer, expression, Mode::FilterHighlight(Colour::Red), false).unwrap();
+        let settings = Settings {
+            formats: Formats {
+                date: String::from(DATE_FORMAT),
+            },
+            mode: Mode::FilterHighlight(Colour::Red),
+            count: false,
+        };
+        let filter = Filter::new(&tokenizer, expression, &settings).unwrap();
 
         // exercise
         let lines = filter.filter(&mut input, &mut output).unwrap();

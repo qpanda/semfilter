@@ -11,12 +11,11 @@ use crate::filter::Filter;
 use crate::tokenizer::Tokenizer;
 
 fn main() -> Result<(), Error> {
-    let mut arguments = Arguments::parse().context("Invalid command arguments")?;
-    let tokenizer = Tokenizer::new(arguments.separators).context("Initializing tokenizer failed")?;
-    let filter = Filter::new(&tokenizer, &arguments.expression, arguments.mode, arguments.count)
-        .context("Initializing filter failed")?;
+    let mut args = Arguments::parse().context("Invalid command arguments")?;
+    let tokenizer = Tokenizer::new(args.separators).context("Initializing tokenizer failed")?;
+    let filter = Filter::new(&tokenizer, &args.expression, &args.settings).context("Initializing filter failed")?;
     filter
-        .filter(&mut arguments.input, &mut arguments.output)
+        .filter(&mut args.input, &mut args.output)
         .context("Filtering failed")?;
     Ok(())
 }

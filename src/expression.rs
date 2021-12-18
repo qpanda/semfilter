@@ -2,6 +2,7 @@ extern crate peg;
 
 use std::collections::HashSet;
 
+use crate::filter::Formats;
 use crate::parser::Class;
 use crate::parser::Term;
 use crate::parser::Value;
@@ -9,10 +10,10 @@ use crate::tokenizer::Position;
 use crate::tokenizer::Token;
 
 peg::parser!(pub grammar expression() for str {
-    pub rule evaluate(tokens: &Vec<Token>) -> HashSet<Position>
-        = condition(tokens)
+    pub rule evaluate(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
+        = condition(tokens, formats)
 
-    rule condition(tokens: &Vec<Token>) -> HashSet<Position>
+    rule condition(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
         = integer_condition(tokens)
         / float_condition(tokens)
         / id_condition(tokens)
@@ -89,6 +90,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::filter::DATE_FORMAT;
 
     #[test]
     fn integer_matches() {
@@ -133,26 +135,53 @@ mod tests {
 
     #[test]
     fn invalid_integer_conditions() {
-        assert!(expression::evaluate("$integer + 9", &vec![]).is_err());
-        assert!(expression::evaluate("wrong == 9", &vec![]).is_err());
-        assert!(expression::evaluate("$integer == a", &vec![]).is_err());
+        // setup
+        let formats = Formats {
+            date: String::from(DATE_FORMAT),
+        };
+
+        // exercise & verify
+        assert!(expression::evaluate("$integer + 9", &vec![], &formats).is_err());
+        assert!(expression::evaluate("wrong == 9", &vec![], &formats).is_err());
+        assert!(expression::evaluate("$integer == a", &vec![], &formats).is_err());
     }
 
     #[test]
     fn valid_integer_conditions() {
-        assert!(expression::evaluate("$integer == 9", &vec![]).is_ok());
-        assert!(expression::evaluate("$integer != 9", &vec![]).is_ok());
-        assert!(expression::evaluate("$integer > 9", &vec![]).is_ok());
-        assert!(expression::evaluate("$integer >= 9", &vec![]).is_ok());
-        assert!(expression::evaluate("$integer < 9", &vec![]).is_ok());
-        assert!(expression::evaluate("$integer <= 9", &vec![]).is_ok());
+        // setup
+        let formats = Formats {
+            date: String::from(DATE_FORMAT),
+        };
+
+        // exercise & verify
+        assert!(expression::evaluate("$integer == 9", &vec![], &formats).is_ok());
+        assert!(expression::evaluate("$integer != 9", &vec![], &formats).is_ok());
+        assert!(expression::evaluate("$integer > 9", &vec![], &formats).is_ok());
+        assert!(expression::evaluate("$integer >= 9", &vec![], &formats).is_ok());
+        assert!(expression::evaluate("$integer < 9", &vec![], &formats).is_ok());
+        assert!(expression::evaluate("$integer <= 9", &vec![], &formats).is_ok());
     }
 
     #[test]
     fn evaluate_expression_no_tokens() {
-        assert_eq!(expression::evaluate("$integer == 9", &vec![]), Ok(HashSet::new()));
-        assert_eq!(expression::evaluate("$integer != 9", &vec![]), Ok(HashSet::new()));
-        assert_eq!(expression::evaluate("$float > 1.0", &vec![]), Ok(HashSet::new()));
+        // setup
+        let formats = Formats {
+            date: String::from(DATE_FORMAT),
+        };
+
+        // exercise & verify
+        assert_eq!(
+            expression::evaluate("$integer == 9", &vec![], &formats),
+            Ok(HashSet::new())
+        );
+        assert_eq!(
+            expression::evaluate("$integer != 9", &vec![], &formats),
+            Ok(HashSet::new())
+        );
+        assert_eq!(
+            expression::evaluate("$float > 1.0", &vec![], &formats),
+            Ok(HashSet::new())
+        );
     }
 
     #[test]
@@ -175,15 +204,46 @@ mod tests {
                 word: "5.5",
             },
         ];
+        let formats = Formats {
+            date: String::from(DATE_FORMAT),
+        };
 
-        assert_eq!(expression::evaluate("$integer == 9", &tokens), Ok(HashSet::from([1])));
-        assert_eq!(expression::evaluate("$integer != 9", &tokens), Ok(HashSet::from([])));
-        assert_eq!(expression::evaluate("$float == 5.5", &tokens), Ok(HashSet::from([2])));
-        assert_eq!(expression::evaluate("$float != 5.5", &tokens), Ok(HashSet::from([1])));
-        assert_eq!(expression::evaluate("$float > 0.0", &tokens), Ok(HashSet::from([1, 2])));
-        assert_eq!(expression::evaluate("$float < 0.0", &tokens), Ok(HashSet::from([])));
-        assert_eq!(expression::evaluate("$id == a1", &tokens), Ok(HashSet::from([0])));
-        assert_eq!(expression::evaluate("$id != a1", &tokens), Ok(HashSet::from([1, 2])));
-        assert_eq!(expression::evaluate("$id == b1", &tokens), Ok(HashSet::from([])));
+        // exercise & verify
+        assert_eq!(
+            expression::evaluate("$integer == 9", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer != 9", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("$float == 5.5", &tokens, &formats),
+            Ok(HashSet::from([2]))
+        );
+        assert_eq!(
+            expression::evaluate("$float != 5.5", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$float > 0.0", &tokens, &formats),
+            Ok(HashSet::from([1, 2]))
+        );
+        assert_eq!(
+            expression::evaluate("$float < 0.0", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("$id == a1", &tokens, &formats),
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("$id != a1", &tokens, &formats),
+            Ok(HashSet::from([1, 2]))
+        );
+        assert_eq!(
+            expression::evaluate("$id == b1", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
     }
 }

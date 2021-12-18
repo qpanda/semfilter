@@ -1,8 +1,10 @@
-use crate::filter::Mode;
+use crate::filter::DATE_FORMAT;
+use crate::filter::{Formats, Mode, Settings};
 use crate::filter::{FILTER, FILTER_HIGHLIGHT, HIGHLIGHT};
 use crate::tokenizer::Separators;
 use crate::tokenizer::{COMMA, PIPE, SEMICOLON, SPACE, WHITESPACE};
-use anyhow::{Context, Error};
+use anyhow::{anyhow, Context, Error};
+use chrono::format::{strftime::StrftimeItems, Item};
 use clap::{App, Arg};
 use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
@@ -11,10 +13,9 @@ use std::str::FromStr;
 pub struct Arguments {
     pub input: Box<dyn Read>,
     pub output: Box<dyn Write>,
-    pub mode: Mode,
-    pub count: bool,
     pub expression: String,
     pub separators: Separators,
+    pub settings: Settings,
 }
 
 impl Arguments {
@@ -24,6 +25,7 @@ impl Arguments {
         let separator_argument = "separator";
         let mode_argument = "mode";
         let count_argument = "count";
+        let date_format = "date-format";
         let expression_argument = "expression";
         let semfilter_command = App::new("semfilter")
             .version("0.1")
@@ -69,6 +71,14 @@ impl Arguments {
                     .help("Print processed and matched line count"),
             )
             .arg(
+                Arg::with_name(date_format)
+                    .long("date-format")
+                    .value_name("date-format")
+                    .default_value(DATE_FORMAT)
+                    .validator(Arguments::validate_strftime)
+                    .help("Date format using chrono::format::strftime specifiers (must not include separators)"),
+            )
+            .arg(
                 Arg::with_name(expression_argument)
                     .help("Filter expression")
                     .required(true)
@@ -88,24 +98,35 @@ impl Arguments {
                 Box::new(File::open(output_file).context(format!("Failed to open output-file '{}'", output_file))?)
             }
         };
-        let separators = match argument_matches.values_of(separator_argument) {
-            None => Separators::new(vec![WHITESPACE])?,
-            Some(separator) => Separators::new(separator.collect())?,
-        };
-        let mode = match argument_matches.value_of(mode_argument) {
-            None => Mode::from_str(FILTER_HIGHLIGHT)?,
-            Some(mode) => Mode::from_str(mode)?,
-        };
+        let separators = Separators::new(argument_matches.values_of(separator_argument).unwrap().collect())?;
+        let mode = Mode::from_str(argument_matches.value_of(mode_argument).unwrap())?;
         let count = argument_matches.is_present(count_argument);
+        let date_format = argument_matches.value_of(date_format).unwrap();
         let expression = String::from(argument_matches.value_of(expression_argument).unwrap());
+
+        if separators.comprise_any(date_format.chars()) {
+            return Err(anyhow!("Date format '{}' must not contain separators", date_format));
+        }
 
         Ok(Arguments {
             input: input,
             output: output,
-            mode: mode,
-            count: count,
             expression: expression,
             separators: separators,
+            settings: Settings {
+                formats: Formats {
+                    date: String::from(date_format),
+                },
+                mode: mode,
+                count: count,
+            },
         })
+    }
+
+    fn validate_strftime(v: String) -> Result<(), String> {
+        match StrftimeItems::new(&v).position(|i| i == Item::Error) {
+            None => Ok(()),
+            Some(_) => Err(format!("Format string '{}' invalid", v)),
+        }
     }
 }
