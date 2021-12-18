@@ -34,9 +34,11 @@ impl FromStr for Mode {
 }
 
 pub const DATE_FORMAT: &str = "%F";
+pub const TIME_FORMAT: &str = "%T";
 
 pub struct Formats {
     pub date: String,
+    pub time: String,
 }
 
 pub struct Settings {
@@ -159,6 +161,7 @@ mod tests {
         let settings = Settings {
             formats: Formats {
                 date: String::from(DATE_FORMAT),
+                time: String::from(TIME_FORMAT),
             },
             mode: Mode::Filter,
             count: false,
@@ -199,6 +202,7 @@ mod tests {
         let settings = Settings {
             formats: Formats {
                 date: String::from(DATE_FORMAT),
+                time: String::from(TIME_FORMAT),
             },
             mode: Mode::Highlight(colour),
             count: false,
@@ -233,6 +237,7 @@ mod tests {
         let settings = Settings {
             formats: Formats {
                 date: String::from(DATE_FORMAT),
+                time: String::from(TIME_FORMAT),
             },
             mode: Mode::Highlight(Colour::Red),
             count: false,
@@ -267,6 +272,7 @@ mod tests {
         let settings = Settings {
             formats: Formats {
                 date: String::from(DATE_FORMAT),
+                time: String::from(TIME_FORMAT),
             },
             mode: Mode::Filter,
             count: false,
@@ -301,6 +307,7 @@ mod tests {
         let settings = Settings {
             formats: Formats {
                 date: String::from(DATE_FORMAT),
+                time: String::from(TIME_FORMAT),
             },
             mode: Mode::Filter,
             count: false,
@@ -341,6 +348,7 @@ mod tests {
         let settings = Settings {
             formats: Formats {
                 date: String::from(DATE_FORMAT),
+                time: String::from(TIME_FORMAT),
             },
             mode: Mode::FilterHighlight(colour),
             count: false,
@@ -375,6 +383,7 @@ mod tests {
         let settings = Settings {
             formats: Formats {
                 date: String::from(DATE_FORMAT),
+                time: String::from(TIME_FORMAT),
             },
             mode: Mode::FilterHighlight(Colour::Red),
             count: false,

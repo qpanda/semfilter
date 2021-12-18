@@ -1,5 +1,5 @@
 use anyhow::Error;
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveTime};
 
 use crate::tokenizer::Position;
 use crate::tokenizer::Token;
@@ -9,6 +9,7 @@ pub enum Class {
     Float,
     Id,
     Date(String),
+    Time(String),
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
@@ -17,6 +18,7 @@ pub enum Value {
     Float(f64),
     Id(String),
     Date(NaiveDate),
+    Time(NaiveTime),
 }
 
 #[derive(Debug, PartialEq)]
@@ -39,6 +41,10 @@ impl Value {
             Class::Id => Ok(Value::Id(String::from(word))),
             Class::Date(format) => match NaiveDate::parse_from_str(word, format) {
                 Ok(date) => Ok(Value::Date(date)),
+                Err(error) => Err(error.into()),
+            },
+            Class::Time(format) => match NaiveTime::parse_from_str(word, format) {
+                Ok(time) => Ok(Value::Time(time)),
                 Err(error) => Err(error.into()),
             },
         }
@@ -130,6 +136,23 @@ mod value_tests {
 
         // verify
         assert_eq!(Value::Date(date), ok_1.unwrap());
+        assert_eq!(true, err_1.is_err());
+        assert_eq!(true, err_2.is_err());
+    }
+
+    #[test]
+    fn new_time() {
+        // setup
+        let format = "%T";
+        let time = NaiveTime::from_hms(15, 15, 15);
+
+        // exercise
+        let ok_1 = Value::from(&time.format(format).to_string(), &Class::Time(String::from(format)));
+        let err_1 = Value::from("5.5", &Class::Time(String::from(format)));
+        let err_2 = Value::from("15.15.15", &Class::Time(String::from(format)));
+
+        // verify
+        assert_eq!(Value::Time(time), ok_1.unwrap());
         assert_eq!(true, err_1.is_err());
         assert_eq!(true, err_2.is_err());
     }

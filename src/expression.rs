@@ -18,6 +18,7 @@ peg::parser!(pub grammar expression() for str {
         / float_condition(tokens)
         / id_condition(tokens)
         / date_condition(tokens, formats)
+        / time_condition(tokens, formats)
 
     //
     // conditions
@@ -54,6 +55,14 @@ peg::parser!(pub grammar expression() for str {
     / dates:dates(tokens, formats) " < " date:date(formats) { matches(&dates, |term| term.value < date) }
     / dates:dates(tokens, formats) " <= " date:date(formats) { matches(&dates, |term| term.value <= date) }
 
+    rule time_condition(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
+    = times:times(tokens, formats) " == " time:time(formats) { matches(&times, |term| term.value == time) }
+    / times:times(tokens, formats) " != " time:time(formats) { matches(&times, |term| term.value != time) }
+    / times:times(tokens, formats) " > " time:time(formats) { matches(&times, |term| term.value > time) }
+    / times:times(tokens, formats) " >= " time:time(formats) { matches(&times, |term| term.value >= time) }
+    / times:times(tokens, formats) " < " time:time(formats) { matches(&times, |term| term.value < time) }
+    / times:times(tokens, formats) " <= " time:time(formats) { matches(&times, |term| term.value <= time) }
+
     //
     // terms
     //
@@ -68,6 +77,9 @@ peg::parser!(pub grammar expression() for str {
 
     rule dates(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term>
         = "$date" { Term::from(tokens, &Class::Date(formats.date.to_string())) }
+
+    rule times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term>
+        = "$time" { Term::from(tokens, &Class::Time(formats.time.to_string())) }
 
     //
     // values
@@ -91,6 +103,11 @@ peg::parser!(pub grammar expression() for str {
         = n:$([_]+) {?
             Value::from(n, &Class::Date(formats.date.to_string())).map_err(|_| "failed to parse date")
         }
+
+    rule time(formats: &Formats) -> Value
+        = n:$([_]+) {?
+            Value::from(n, &Class::Time(formats.time.to_string())).map_err(|_| "failed to parse time")
+        }
 });
 
 fn matches<P>(terms: &Vec<Term>, predicate: P) -> HashSet<Position>
@@ -107,7 +124,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::filter::DATE_FORMAT;
+    use crate::filter::{DATE_FORMAT, TIME_FORMAT};
 
     #[test]
     fn integer_matches() {
@@ -155,6 +172,7 @@ mod tests {
         // setup
         let formats = Formats {
             date: String::from(DATE_FORMAT),
+            time: String::from(TIME_FORMAT),
         };
 
         // exercise & verify
@@ -168,6 +186,7 @@ mod tests {
         // setup
         let formats = Formats {
             date: String::from(DATE_FORMAT),
+            time: String::from(TIME_FORMAT),
         };
 
         // exercise & verify
@@ -184,6 +203,7 @@ mod tests {
         // setup
         let formats = Formats {
             date: String::from(DATE_FORMAT),
+            time: String::from(TIME_FORMAT),
         };
 
         // exercise & verify
@@ -225,9 +245,15 @@ mod tests {
                 separator: false,
                 word: "2021-01-01",
             },
+            Token {
+                position: 4,
+                separator: false,
+                word: "15:15:15",
+            },
         ];
         let formats = Formats {
             date: String::from(DATE_FORMAT),
+            time: String::from(TIME_FORMAT),
         };
 
         // exercise & verify
@@ -261,7 +287,7 @@ mod tests {
         );
         assert_eq!(
             expression::evaluate("$id != a1", &tokens, &formats),
-            Ok(HashSet::from([1, 2, 3]))
+            Ok(HashSet::from([1, 2, 3, 4]))
         );
         assert_eq!(
             expression::evaluate("$id == b1", &tokens, &formats),
@@ -278,6 +304,18 @@ mod tests {
         assert_eq!(
             expression::evaluate("$date > 2000-01-01", &tokens, &formats),
             Ok(HashSet::from([3]))
+        );
+        assert_eq!(
+            expression::evaluate("$time == 15:15:15", &tokens, &formats),
+            Ok(HashSet::from([4]))
+        );
+        assert_eq!(
+            expression::evaluate("$time != 15:15:15", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("$time > 13:00:00", &tokens, &formats),
+            Ok(HashSet::from([4]))
         );
     }
 }
