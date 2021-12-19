@@ -1,3 +1,4 @@
+use crate::expression::GRAMMER_DELIMITERS;
 use crate::filter::{Formats, Mode, Settings};
 use crate::filter::{DATE_FORMAT, DATE_TIME_FORMAT, LOCAL_DATE_TIME_FORMAT, TIME_FORMAT};
 use crate::filter::{FILTER, FILTER_HIGHLIGHT, HIGHLIGHT};
@@ -177,10 +178,19 @@ impl Arguments {
         })
     }
 
-    fn validate_strftime(v: String) -> Result<(), String> {
-        match StrftimeItems::new(&v).position(|i| i == Item::Error) {
+    fn validate_strftime(format: String) -> Result<(), String> {
+        for grammar_delimiter in GRAMMER_DELIMITERS {
+            if format.contains(grammar_delimiter) {
+                return Err(format!(
+                    "Format string '{}' must not contain grammar delimiters {}",
+                    format, grammar_delimiter
+                ));
+            }
+        }
+
+        match StrftimeItems::new(&format).position(|i| i == Item::Error) {
             None => Ok(()),
-            Some(_) => Err(format!("Format string '{}' invalid", v)),
+            Some(_) => Err(format!("Format string '{}' invalid", format)),
         }
     }
 }

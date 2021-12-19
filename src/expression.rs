@@ -9,9 +9,35 @@ use crate::parser::Value;
 use crate::tokenizer::Position;
 use crate::tokenizer::Token;
 
+pub const GRAMMER_DELIMITERS: &'static [&'static str] = &["(", ")", " "];
+
 peg::parser!(pub grammar expression() for str {
     pub rule evaluate(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
+        = or(tokens, formats)
+
+    rule or(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
+        = l:and(tokens, formats) " or " r:and(tokens, formats) {
+            if !l.is_empty() || !r.is_empty() {
+                return l.union(&r).copied().collect();
+            }
+
+            return HashSet::new();
+        }
+        / and(tokens, formats)
+
+    rule and(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
+        = l:conditions(tokens, formats) " and " r:conditions(tokens, formats)  {
+            if !l.is_empty() && !r.is_empty() {
+                return l.union(&r).copied().collect();
+            }
+
+            return HashSet::new();
+        }
+        / conditions(tokens, formats)
+
+    rule conditions(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
         = condition(tokens, formats)
+        / "(" v:or(tokens, formats) ")" { v }
 
     rule condition(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
         = integer_condition(tokens)
@@ -184,47 +210,47 @@ peg::parser!(pub grammar expression() for str {
         }
 
     rule date(formats: &Formats) -> Value
-        = n:$([_]+) {?
+        = n:$([^'('|')'|' ']+) {?
             Value::from_word(n, &Class::Date(formats.date.to_string())).map_err(|_| "failed to parse date")
         }
 
     rule time(formats: &Formats) -> Value
-        = n:$([_]+) {?
+        = n:$([^'('|')'|' ']+) {?
             Value::from_word(n, &Class::Time(formats.time.to_string())).map_err(|_| "failed to parse time")
         }
 
     rule date_time(formats: &Formats) -> Value
-        = n:$([_]+) {?
+        = n:$([^'('|')'|' ']+) {?
             Value::from_word(n, &Class::DateTime(formats.date_time.to_string())).map_err(|_| "failed to parse dateTime")
         }
 
     rule local_date_time(formats: &Formats) -> Value
-        = n:$([_]+) {?
+        = n:$([^'('|')'|' ']+) {?
             Value::from_word(n, &Class::LocalDateTime(formats.local_date_time.to_string())).map_err(|_| "failed to parse localDateTime")
         }
 
     rule ipv4_address() -> Value
-        = n:$([_]+) {?
+        = n:$([^'('|')'|' ']+) {?
             Value::from_word(n, &Class::Ipv4Address).map_err(|_| "failed to parse IPv4 address")
         }
 
     rule ipv6_address() -> Value
-        = n:$([_]+) {?
+        = n:$([^'('|')'|' ']+) {?
             Value::from_word(n, &Class::Ipv6Address).map_err(|_| "failed to parse IPv6 address")
         }
 
     rule ipv4_socket_address() -> Value
-        = n:$([_]+) {?
+        = n:$([^'('|')'|' ']+) {?
             Value::from_word(n, &Class::Ipv4SocketAddress).map_err(|_| "failed to parse IPv4 socket address")
         }
 
     rule ipv6_socket_address() -> Value
-        = n:$([_]+) {?
+        = n:$([^'('|')'|' ']+) {?
             Value::from_word(n, &Class::Ipv6SocketAddress).map_err(|_| "failed to parse IPv6 socket address")
         }
 
     rule semantic_version() -> Value
-        = n:$([_]+) {?
+        = n:$([^'('|')'|' ']+) {?
             Value::from_word(n, &Class::SemanticVersion).map_err(|_| "failed to parse semantic version")
         }
 });
@@ -241,9 +267,8 @@ where
 }
 
 #[cfg(test)]
-mod tests {
+mod matches_tests {
     use super::*;
-    use crate::filter::test_utils;
 
     #[test]
     fn integer_matches() {
@@ -285,26 +310,113 @@ mod tests {
         assert_eq!(HashSet::from([]), integers_gt_float_0);
         assert_eq!(HashSet::from([]), integers_eq_id_2);
     }
+}
+
+#[cfg(test)]
+mod expression_tests {
+    use super::*;
+    use crate::filter::test_utils;
 
     #[test]
-    fn invalid_integer_conditions() {
-        assert!(expression::evaluate("$integer + 9", &vec![], &test_utils::default_formats()).is_err());
-        assert!(expression::evaluate("wrong == 9", &vec![], &test_utils::default_formats()).is_err());
-        assert!(expression::evaluate("$integer == a", &vec![], &test_utils::default_formats()).is_err());
+    fn invalid_integer_expressions() {
+        assert_invalid_expression("$integer + 9");
+        assert_invalid_expression("wrong == 9");
+        assert_invalid_expression("$integer == a");
     }
 
     #[test]
-    fn valid_integer_conditions() {
-        assert!(expression::evaluate("$integer == 9", &vec![], &test_utils::default_formats()).is_ok());
-        assert!(expression::evaluate("$integer != 9", &vec![], &test_utils::default_formats()).is_ok());
-        assert!(expression::evaluate("$integer > 9", &vec![], &test_utils::default_formats()).is_ok());
-        assert!(expression::evaluate("$integer >= 9", &vec![], &test_utils::default_formats()).is_ok());
-        assert!(expression::evaluate("$integer < 9", &vec![], &test_utils::default_formats()).is_ok());
-        assert!(expression::evaluate("$integer <= 9", &vec![], &test_utils::default_formats()).is_ok());
+    fn valid_integer_expressions() {
+        assert_valid_expression("$integer == 9");
+        assert_valid_expression("$integer != 9");
+        assert_valid_expression("$integer > 9");
+        assert_valid_expression("$integer >= 9");
+        assert_valid_expression("$integer < 9");
+        assert_valid_expression("$integer <= 9");
+        assert_valid_expression("($integer == 9)");
     }
 
     #[test]
-    fn evaluate_expression_no_tokens() {
+    fn valid_date_expressions() {
+        assert_valid_expression("$date == 2021-01-01");
+        assert_valid_expression("$date != 2021-01-01");
+        assert_valid_expression("$date > 2021-01-01");
+        assert_valid_expression("$date >= 2021-01-01");
+        assert_valid_expression("$date < 2021-01-01");
+        assert_valid_expression("$date <= 2021-01-01");
+        assert_valid_expression("($date == 2021-01-01)");
+    }
+
+    #[test]
+    fn valid_and_expressions() {
+        assert_valid_expression("$integer > 9 and $integer > 8");
+        assert_valid_expression("$date > 2021-01-01 and $integer > 8");
+        assert_valid_expression("$integer > 9 and ($integer > 8 and $integer > 7)");
+        assert_valid_expression("($integer > 9 and $integer > 8) and $integer > 7");
+        assert_valid_expression("$integer > 9 and $float < 5.5");
+        assert_valid_expression("($integer > 9) and ($integer > 8)");
+        assert_valid_expression("(($integer > 9) and ($integer > 8))");
+    }
+
+    #[test]
+    fn invalid_and_expressions() {
+        assert_invalid_expression("()");
+        assert_invalid_expression("$integer > 9 and $integer > 8 and $integer > 7");
+        assert_invalid_expression("$integer > 9 && $integer > 8");
+        assert_invalid_expression("$integer > 9 and < 5.5");
+        assert_invalid_expression("$integer > 9 (and < 5.5)");
+        assert_invalid_expression("($integer > 9)($integer > 8)");
+        assert_invalid_expression("(($integer > 9)($integer > 8))");
+    }
+
+    #[test]
+    fn valid_or_expressions() {
+        assert_valid_expression("$integer > 9 or $integer > 8");
+        assert_valid_expression("$integer > 9 or $date > 2021-01-01");
+        assert_valid_expression("$integer > 9 or ($integer > 8 or $integer > 7)");
+        assert_valid_expression("($integer > 9 or $integer > 8) or $integer > 7");
+        assert_valid_expression("$integer > 9 or $float < 5.5");
+        assert_valid_expression("($integer > 9) or ($integer > 8)");
+        assert_valid_expression("(($integer > 9) or ($integer > 8))");
+    }
+
+    #[test]
+    fn invalid_or_expressions() {
+        assert_invalid_expression("()");
+        assert_invalid_expression("$integer > 9 or $integer > 8 or $integer > 7");
+        assert_invalid_expression("$integer > 9 || $integer > 8");
+        assert_invalid_expression("$integer > 9 or < 5.5");
+        assert_invalid_expression("$integer > 9 (or < 5.5)");
+        assert_invalid_expression("($integer > 9)($integer > 8)");
+        assert_invalid_expression("(($integer > 9)($integer > 8))");
+    }
+
+    #[test]
+    fn valid_and_or_expressions() {
+        assert_valid_expression("$integer > 9 and $integer > 8 or $float < 5.5");
+        assert_valid_expression("$integer > 9 and ($integer > 8 or $float < 5.5)");
+        assert_valid_expression("($integer > 9 and $integer > 8) or $float < 5.5");
+        assert_valid_expression("$integer > 9 or $integer > 8 and $float < 5.5");
+        assert_valid_expression("$integer > 9 or ($integer > 8 and $float < 5.5)");
+        assert_valid_expression("($integer > 9 or $integer > 8) and $float < 5.5");
+        assert_valid_expression("($integer > 9) and ($integer > 8) or ($float < 5.5)");
+    }
+
+    fn assert_valid_expression(expression: &str) {
+        assert!(expression::evaluate(expression, &vec![], &test_utils::default_formats()).is_ok());
+    }
+
+    fn assert_invalid_expression(expression: &str) {
+        assert!(expression::evaluate(expression, &vec![], &test_utils::default_formats()).is_err());
+    }
+}
+
+#[cfg(test)]
+mod evaluation_tests {
+    use super::*;
+    use crate::filter::test_utils;
+
+    #[test]
+    fn evaluate_expression_without_tokens() {
         assert_eq!(
             expression::evaluate("$integer == 9", &vec![], &test_utils::default_formats()),
             Ok(HashSet::new())
@@ -320,7 +432,7 @@ mod tests {
     }
 
     #[test]
-    fn evaluate_expression_with_tokens() {
+    fn evaluate_simple_expression() {
         // setup
         let tokens = vec![
             Token {
@@ -530,6 +642,107 @@ mod tests {
         assert_eq!(
             expression::evaluate("$semanticVersion > 1.0.0", &tokens, &formats),
             Ok(HashSet::from([11]))
+        );
+    }
+
+    #[test]
+    fn evaluate_complex_expression() {
+        // setup
+        let tokens = vec![
+            Token {
+                position: 0,
+                separator: false,
+                word: "a1",
+            },
+            Token {
+                position: 1,
+                separator: false,
+                word: "9",
+            },
+            Token {
+                position: 2,
+                separator: false,
+                word: "5.5",
+            },
+        ];
+        let formats = test_utils::default_formats();
+
+        // exercise & verify
+        assert_eq!(
+            expression::evaluate("$integer == 9 and $float == 5.5", &tokens, &formats),
+            Ok(HashSet::from([1, 2]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer == 9 or $float == 5.5", &tokens, &formats),
+            Ok(HashSet::from([1, 2]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer == 9 or $float == 8.8", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer == 8 or $float == 5.5", &tokens, &formats),
+            Ok(HashSet::from([2]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer == 8 or $float == 6.6", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer == 9 and $integer == 8", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer == 9 and ($float == 5.5 or $id == a1)", &tokens, &formats),
+            Ok(HashSet::from([0, 1, 2]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer == 9 and ($float == 5.5 or $id == b1)", &tokens, &formats),
+            Ok(HashSet::from([1, 2]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer == 9 and ($float != 5.5 or $id == a1)", &tokens, &formats),
+            Ok(HashSet::from([0, 1]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer == 9 or ($float == 8.8 or $id == b1)", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer == 9 or ($float != 5.5)", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+    }
+
+    #[test]
+    fn evaluate_operator_precedence() {
+        // setup
+        let tokens = vec![
+            Token {
+                position: 0,
+                separator: false,
+                word: "1",
+            },
+            Token {
+                position: 1,
+                separator: false,
+                word: "2.2",
+            },
+        ];
+        let formats = test_utils::default_formats();
+
+        // exercise & verify
+        assert_eq!(
+            expression::evaluate("$integer == 0 and $integer == 1 or $float == 2.2", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("($integer == 0 and $integer == 1) or $float == 2.2", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$integer == 0 and ($integer == 1 or $float == 2.2)", &tokens, &formats),
+            Ok(HashSet::from([]))
         );
     }
 }
