@@ -25,6 +25,7 @@ peg::parser!(pub grammar expression() for str {
         / ipv6_address_condition(tokens)
         / ipv4_socket_address_condition(tokens)
         / ipv6_socket_address_condition(tokens)
+        / semantic_version_condition(tokens)
 
     //
     // conditions
@@ -117,6 +118,14 @@ peg::parser!(pub grammar expression() for str {
     / ipv6_socket_addresses:ipv6_socket_addresses(tokens) " < " ipv6_socket_address:ipv6_socket_address() { matches(&ipv6_socket_addresses, |term| term.value < ipv6_socket_address) }
     / ipv6_socket_addresses:ipv6_socket_addresses(tokens) " <= " ipv6_socket_address:ipv6_socket_address() { matches(&ipv6_socket_addresses, |term| term.value <= ipv6_socket_address) }
 
+    rule semantic_version_condition(tokens: &Vec<Token>) -> HashSet<Position>
+    = semantic_versions:semantic_versions(tokens) " == " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value == semantic_version) }
+    / semantic_versions:semantic_versions(tokens) " != " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value != semantic_version) }
+    / semantic_versions:semantic_versions(tokens) " > " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value > semantic_version) }
+    / semantic_versions:semantic_versions(tokens) " >= " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value >= semantic_version) }
+    / semantic_versions:semantic_versions(tokens) " < " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value < semantic_version) }
+    / semantic_versions:semantic_versions(tokens) " <= " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value <= semantic_version) }
+
     //
     // terms
     //
@@ -152,6 +161,9 @@ peg::parser!(pub grammar expression() for str {
 
     rule ipv6_socket_addresses(tokens: &Vec<Token>) -> Vec<Term>
         = "$ipv6SocketAddress" { Term::from(tokens, &Class::Ipv6SocketAddress) }
+
+    rule semantic_versions(tokens: &Vec<Token>) -> Vec<Term>
+        = "$semanticVersion" { Term::from(tokens, &Class::SemanticVersion) }
 
     //
     // values
@@ -209,6 +221,11 @@ peg::parser!(pub grammar expression() for str {
     rule ipv6_socket_address() -> Value
         = n:$([_]+) {?
             Value::from(n, &Class::Ipv6SocketAddress).map_err(|_| "failed to parse IPv6 socket address")
+        }
+
+    rule semantic_version() -> Value
+        = n:$([_]+) {?
+            Value::from(n, &Class::SemanticVersion).map_err(|_| "failed to parse semantic version")
         }
 });
 
@@ -361,6 +378,11 @@ mod tests {
                 separator: false,
                 word: "[2001:4860:4860::8888]:53",
             },
+            Token {
+                position: 11,
+                separator: false,
+                word: "1.2.3",
+            },
         ];
         let formats = test_utils::default_formats();
 
@@ -395,7 +417,7 @@ mod tests {
         );
         assert_eq!(
             expression::evaluate("$id != a1", &tokens, &formats),
-            Ok(HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
+            Ok(HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]))
         );
         assert_eq!(
             expression::evaluate("$id == b1", &tokens, &formats),
@@ -496,6 +518,18 @@ mod tests {
         assert_eq!(
             expression::evaluate("$ipv6SocketAddress > [2001:4860:4860::8844]:53", &tokens, &formats),
             Ok(HashSet::from([10]))
+        );
+        assert_eq!(
+            expression::evaluate("$semanticVersion == 1.2.3", &tokens, &formats),
+            Ok(HashSet::from([11]))
+        );
+        assert_eq!(
+            expression::evaluate("$semanticVersion != 1.2.3", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("$semanticVersion > 1.0.0", &tokens, &formats),
+            Ok(HashSet::from([11]))
         );
     }
 }

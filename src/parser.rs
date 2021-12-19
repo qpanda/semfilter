@@ -1,5 +1,6 @@
 use anyhow::Error;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
+use semver::Version;
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 
 use crate::tokenizer::Position;
@@ -17,6 +18,7 @@ pub enum Class {
     Ipv6Address,
     Ipv4SocketAddress,
     Ipv6SocketAddress,
+    SemanticVersion,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
@@ -32,6 +34,7 @@ pub enum Value {
     Ipv6Address(Ipv6Addr),
     Ipv4SocketAddress(SocketAddrV4),
     Ipv6SocketAddress(SocketAddrV6),
+    SemanticVersion(Version),
 }
 
 #[derive(Debug, PartialEq)]
@@ -82,6 +85,10 @@ impl Value {
             },
             Class::Ipv6SocketAddress => match word.parse::<SocketAddrV6>() {
                 Ok(address) => Ok(Value::Ipv6SocketAddress(address)),
+                Err(error) => Err(error.into()),
+            },
+            Class::SemanticVersion => match Version::parse(word) {
+                Ok(version) => Ok(Value::SemanticVersion(version)),
                 Err(error) => Err(error.into()),
             },
         }
@@ -290,6 +297,22 @@ mod value_tests {
 
         // verify
         assert_eq!(Value::Ipv6SocketAddress(address), ok.unwrap());
+        assert_eq!(true, err_1.is_err());
+        assert_eq!(true, err_2.is_err());
+    }
+
+    #[test]
+    fn new_semantic_version() {
+        // setup
+        let version = Version::parse("1.2.3").unwrap();
+
+        // exercise
+        let ok = Value::from(&version.to_string(), &Class::SemanticVersion);
+        let err_1 = Value::from("1:2:3", &Class::SemanticVersion);
+        let err_2 = Value::from("word", &Class::SemanticVersion);
+
+        // verify
+        assert_eq!(Value::SemanticVersion(version), ok.unwrap());
         assert_eq!(true, err_1.is_err());
         assert_eq!(true, err_2.is_err());
     }
