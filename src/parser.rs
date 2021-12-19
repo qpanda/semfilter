@@ -44,7 +44,7 @@ pub struct Term {
 }
 
 impl Value {
-    pub fn from(word: &str, class: &Class) -> Result<Self, Error> {
+    pub fn from_word(word: &str, class: &Class) -> Result<Self, Error> {
         match class {
             Class::Integer => match word.parse::<i64>() {
                 Ok(integer) => Ok(Value::Integer(integer)),
@@ -96,11 +96,11 @@ impl Value {
 }
 
 impl Term {
-    pub fn from(tokens: &Vec<Token>, class: &Class) -> Vec<Term> {
+    pub fn from_tokens(tokens: &Vec<Token>, class: &Class) -> Vec<Term> {
         let mut result = Vec::new();
         for token in tokens {
             if !token.separator {
-                if let Ok(value) = Value::from(token.word, class) {
+                if let Ok(value) = Value::from_word(token.word, class) {
                     result.push(Term {
                         position: token.position,
                         value: value,
@@ -122,9 +122,9 @@ mod value_tests {
         let integer = 8;
 
         // exercise
-        let ok = Value::from(&integer.to_string(), &Class::Integer);
-        let err_1 = Value::from("5.5", &Class::Integer);
-        let err_2 = Value::from("word", &Class::Integer);
+        let ok = Value::from_word(&integer.to_string(), &Class::Integer);
+        let err_1 = Value::from_word("5.5", &Class::Integer);
+        let err_2 = Value::from_word("word", &Class::Integer);
 
         // verify
         assert_eq!(Value::Integer(integer), ok.unwrap());
@@ -139,9 +139,9 @@ mod value_tests {
         let integer = 8;
 
         // exercise
-        let ok_1 = Value::from(&float.to_string(), &Class::Float);
-        let ok_2 = Value::from(&integer.to_string(), &Class::Float);
-        let err = Value::from("word", &Class::Float);
+        let ok_1 = Value::from_word(&float.to_string(), &Class::Float);
+        let ok_2 = Value::from_word(&integer.to_string(), &Class::Float);
+        let err = Value::from_word("word", &Class::Float);
 
         // verify
         assert_eq!(Value::Float(float), ok_1.unwrap());
@@ -157,9 +157,9 @@ mod value_tests {
         let id = "test";
 
         // exercise
-        let ok_1 = Value::from(float, &Class::Id);
-        let ok_2 = Value::from(integer, &Class::Id);
-        let ok_3 = Value::from(id, &Class::Id);
+        let ok_1 = Value::from_word(float, &Class::Id);
+        let ok_2 = Value::from_word(integer, &Class::Id);
+        let ok_3 = Value::from_word(id, &Class::Id);
 
         // verify
         assert_eq!(Value::Id(String::from(float)), ok_1.unwrap());
@@ -174,9 +174,9 @@ mod value_tests {
         let date = NaiveDate::from_ymd(2021, 01, 01);
 
         // exercise
-        let ok_1 = Value::from(&date.format(format).to_string(), &Class::Date(String::from(format)));
-        let err_1 = Value::from("5.5", &Class::Date(String::from(format)));
-        let err_2 = Value::from("08/08/2021", &Class::Date(String::from(format)));
+        let ok_1 = Value::from_word(&date.format(format).to_string(), &Class::Date(String::from(format)));
+        let err_1 = Value::from_word("5.5", &Class::Date(String::from(format)));
+        let err_2 = Value::from_word("08/08/2021", &Class::Date(String::from(format)));
 
         // verify
         assert_eq!(Value::Date(date), ok_1.unwrap());
@@ -191,9 +191,9 @@ mod value_tests {
         let time = NaiveTime::from_hms(15, 15, 15);
 
         // exercise
-        let ok_1 = Value::from(&time.format(format).to_string(), &Class::Time(String::from(format)));
-        let err_1 = Value::from("5.5", &Class::Time(String::from(format)));
-        let err_2 = Value::from("15.15.15", &Class::Time(String::from(format)));
+        let ok_1 = Value::from_word(&time.format(format).to_string(), &Class::Time(String::from(format)));
+        let err_1 = Value::from_word("5.5", &Class::Time(String::from(format)));
+        let err_2 = Value::from_word("15.15.15", &Class::Time(String::from(format)));
 
         // verify
         assert_eq!(Value::Time(time), ok_1.unwrap());
@@ -209,9 +209,9 @@ mod value_tests {
         let date_time = DateTime::parse_from_str(date_time_string, format).unwrap();
 
         // exercise
-        let ok_1 = Value::from(&date_time_string, &Class::DateTime(String::from(format)));
-        let err_1 = Value::from("5.5", &Class::DateTime(String::from(format)));
-        let err_2 = Value::from("2001-07-08 00:34:60", &Class::DateTime(String::from(format)));
+        let ok_1 = Value::from_word(&date_time_string, &Class::DateTime(String::from(format)));
+        let err_1 = Value::from_word("5.5", &Class::DateTime(String::from(format)));
+        let err_2 = Value::from_word("2001-07-08 00:34:60", &Class::DateTime(String::from(format)));
 
         // verify
         assert_eq!(Value::DateTime(date_time), ok_1.unwrap());
@@ -227,9 +227,9 @@ mod value_tests {
         let local_date_time = NaiveDateTime::parse_from_str(local_date_time_string, format).unwrap();
 
         // exercise
-        let ok_1 = Value::from(&local_date_time_string, &Class::LocalDateTime(String::from(format)));
-        let err_1 = Value::from("5.5", &Class::LocalDateTime(String::from(format)));
-        let err_2 = Value::from("2001-07-08 00:34:60", &Class::LocalDateTime(String::from(format)));
+        let ok_1 = Value::from_word(&local_date_time_string, &Class::LocalDateTime(String::from(format)));
+        let err_1 = Value::from_word("5.5", &Class::LocalDateTime(String::from(format)));
+        let err_2 = Value::from_word("2001-07-08 00:34:60", &Class::LocalDateTime(String::from(format)));
 
         // verify
         assert_eq!(Value::LocalDateTime(local_date_time), ok_1.unwrap());
@@ -243,9 +243,9 @@ mod value_tests {
         let address = "8.8.8.8".parse::<Ipv4Addr>().unwrap();
 
         // exercise
-        let ok = Value::from(&address.to_string(), &Class::Ipv4Address);
-        let err_1 = Value::from("5.5", &Class::Ipv4Address);
-        let err_2 = Value::from("word", &Class::Ipv4Address);
+        let ok = Value::from_word(&address.to_string(), &Class::Ipv4Address);
+        let err_1 = Value::from_word("5.5", &Class::Ipv4Address);
+        let err_2 = Value::from_word("word", &Class::Ipv4Address);
 
         // verify
         assert_eq!(Value::Ipv4Address(address), ok.unwrap());
@@ -259,9 +259,9 @@ mod value_tests {
         let address = "2001:4860:4860::8888".parse::<Ipv6Addr>().unwrap();
 
         // exercise
-        let ok = Value::from(&address.to_string(), &Class::Ipv6Address);
-        let err_1 = Value::from("2001:4860", &Class::Ipv6Address);
-        let err_2 = Value::from("word", &Class::Ipv6Address);
+        let ok = Value::from_word(&address.to_string(), &Class::Ipv6Address);
+        let err_1 = Value::from_word("2001:4860", &Class::Ipv6Address);
+        let err_2 = Value::from_word("word", &Class::Ipv6Address);
 
         // verify
         assert_eq!(Value::Ipv6Address(address), ok.unwrap());
@@ -275,9 +275,9 @@ mod value_tests {
         let address = "8.8.8.8:53".parse::<SocketAddrV4>().unwrap();
 
         // exercise
-        let ok = Value::from(&address.to_string(), &Class::Ipv4SocketAddress);
-        let err_1 = Value::from("5.5.5.5", &Class::Ipv4SocketAddress);
-        let err_2 = Value::from("word", &Class::Ipv4SocketAddress);
+        let ok = Value::from_word(&address.to_string(), &Class::Ipv4SocketAddress);
+        let err_1 = Value::from_word("5.5.5.5", &Class::Ipv4SocketAddress);
+        let err_2 = Value::from_word("word", &Class::Ipv4SocketAddress);
 
         // verify
         assert_eq!(Value::Ipv4SocketAddress(address), ok.unwrap());
@@ -291,9 +291,9 @@ mod value_tests {
         let address = "[2001:4860:4860::8888]:53".parse::<SocketAddrV6>().unwrap();
 
         // exercise
-        let ok = Value::from(&address.to_string(), &Class::Ipv6SocketAddress);
-        let err_1 = Value::from("2001:4860", &Class::Ipv6SocketAddress);
-        let err_2 = Value::from("word", &Class::Ipv6SocketAddress);
+        let ok = Value::from_word(&address.to_string(), &Class::Ipv6SocketAddress);
+        let err_1 = Value::from_word("2001:4860", &Class::Ipv6SocketAddress);
+        let err_2 = Value::from_word("word", &Class::Ipv6SocketAddress);
 
         // verify
         assert_eq!(Value::Ipv6SocketAddress(address), ok.unwrap());
@@ -307,9 +307,9 @@ mod value_tests {
         let version = Version::parse("1.2.3").unwrap();
 
         // exercise
-        let ok = Value::from(&version.to_string(), &Class::SemanticVersion);
-        let err_1 = Value::from("1:2:3", &Class::SemanticVersion);
-        let err_2 = Value::from("word", &Class::SemanticVersion);
+        let ok = Value::from_word(&version.to_string(), &Class::SemanticVersion);
+        let err_1 = Value::from_word("1:2:3", &Class::SemanticVersion);
+        let err_2 = Value::from_word("word", &Class::SemanticVersion);
 
         // verify
         assert_eq!(Value::SemanticVersion(version), ok.unwrap());
@@ -333,9 +333,9 @@ mod term_tests {
         let tokens = vec![separator_token];
 
         // exercise
-        let id_terms = Term::from(&tokens, &Class::Id);
-        let integer_terms = Term::from(&tokens, &Class::Integer);
-        let float_terms = Term::from(&tokens, &Class::Float);
+        let id_terms = Term::from_tokens(&tokens, &Class::Id);
+        let integer_terms = Term::from_tokens(&tokens, &Class::Integer);
+        let float_terms = Term::from_tokens(&tokens, &Class::Float);
 
         // verify
         assert_eq!(0, id_terms.len());
@@ -356,16 +356,16 @@ mod term_tests {
         let tokens = vec![text_token];
 
         // exercise
-        let id_terms = Term::from(&tokens, &Class::Id);
-        let integer_terms = Term::from(&tokens, &Class::Integer);
-        let float_terms = Term::from(&tokens, &Class::Float);
+        let id_terms = Term::from_tokens(&tokens, &Class::Id);
+        let integer_terms = Term::from_tokens(&tokens, &Class::Integer);
+        let float_terms = Term::from_tokens(&tokens, &Class::Float);
 
         // verify
         assert_eq!(1, id_terms.len());
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(word, &Class::Id).unwrap(),
+                value: Value::from_word(word, &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
@@ -388,16 +388,16 @@ mod term_tests {
         let tokens = vec![integer_token];
 
         // exercise
-        let id_terms = Term::from(&tokens, &Class::Id);
-        let integer_terms = Term::from(&tokens, &Class::Integer);
-        let float_terms = Term::from(&tokens, &Class::Float);
+        let id_terms = Term::from_tokens(&tokens, &Class::Id);
+        let integer_terms = Term::from_tokens(&tokens, &Class::Integer);
+        let float_terms = Term::from_tokens(&tokens, &Class::Float);
 
         // verify
         assert_eq!(1, id_terms.len());
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(word, &Class::Id).unwrap(),
+                value: Value::from_word(word, &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
@@ -406,7 +406,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(word, &Class::Integer).unwrap(),
+                value: Value::from_word(word, &Class::Integer).unwrap(),
             },
             integer_terms.get(0).unwrap()
         );
@@ -415,7 +415,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(word, &Class::Float).unwrap(),
+                value: Value::from_word(word, &Class::Float).unwrap(),
             },
             float_terms.get(0).unwrap()
         );
@@ -434,16 +434,16 @@ mod term_tests {
         let tokens = vec![float_token];
 
         // exercise
-        let id_terms = Term::from(&tokens, &Class::Id);
-        let integer_terms = Term::from(&tokens, &Class::Integer);
-        let float_terms = Term::from(&tokens, &Class::Float);
+        let id_terms = Term::from_tokens(&tokens, &Class::Id);
+        let integer_terms = Term::from_tokens(&tokens, &Class::Integer);
+        let float_terms = Term::from_tokens(&tokens, &Class::Float);
 
         // verify
         assert_eq!(1, id_terms.len());
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(word, &Class::Id).unwrap(),
+                value: Value::from_word(word, &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
@@ -454,7 +454,7 @@ mod term_tests {
         assert_eq!(
             &Term {
                 position: position,
-                value: Value::from(word, &Class::Float).unwrap(),
+                value: Value::from_word(word, &Class::Float).unwrap(),
             },
             float_terms.get(0).unwrap()
         );
@@ -522,42 +522,42 @@ mod term_tests {
         ];
 
         // exercise
-        let id_terms = Term::from(&tokens, &Class::Id);
+        let id_terms = Term::from_tokens(&tokens, &Class::Id);
 
         // verify
         assert_eq!(5, id_terms.len());
         assert_eq!(
             &Term {
                 position: position0,
-                value: Value::from(word0, &Class::Id).unwrap(),
+                value: Value::from_word(word0, &Class::Id).unwrap(),
             },
             id_terms.get(0).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position2,
-                value: Value::from(word2, &Class::Id).unwrap(),
+                value: Value::from_word(word2, &Class::Id).unwrap(),
             },
             id_terms.get(1).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position4,
-                value: Value::from(word4, &Class::Id).unwrap(),
+                value: Value::from_word(word4, &Class::Id).unwrap(),
             },
             id_terms.get(2).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position6,
-                value: Value::from(word6, &Class::Id).unwrap(),
+                value: Value::from_word(word6, &Class::Id).unwrap(),
             },
             id_terms.get(3).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position8,
-                value: Value::from(word8, &Class::Id).unwrap(),
+                value: Value::from_word(word8, &Class::Id).unwrap(),
             },
             id_terms.get(4).unwrap()
         );
@@ -617,14 +617,14 @@ mod term_tests {
         ];
 
         // exercise
-        let integer_terms = Term::from(&tokens, &Class::Integer);
+        let integer_terms = Term::from_tokens(&tokens, &Class::Integer);
 
         // verify
         assert_eq!(1, integer_terms.len());
         assert_eq!(
             &Term {
                 position: position2,
-                value: Value::from(word2, &Class::Integer).unwrap(),
+                value: Value::from_word(word2, &Class::Integer).unwrap(),
             },
             integer_terms.get(0).unwrap()
         );
@@ -686,21 +686,21 @@ mod term_tests {
         ];
 
         // exercise
-        let float_terms = Term::from(&tokens, &Class::Float);
+        let float_terms = Term::from_tokens(&tokens, &Class::Float);
 
         // verify
         assert_eq!(2, float_terms.len());
         assert_eq!(
             &Term {
                 position: position2,
-                value: Value::from(word2, &Class::Float).unwrap(),
+                value: Value::from_word(word2, &Class::Float).unwrap(),
             },
             float_terms.get(0).unwrap()
         );
         assert_eq!(
             &Term {
                 position: position8,
-                value: Value::from(word8, &Class::Float).unwrap(),
+                value: Value::from_word(word8, &Class::Float).unwrap(),
             },
             float_terms.get(1).unwrap()
         );
