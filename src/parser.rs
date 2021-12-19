@@ -1,6 +1,6 @@
 use anyhow::Error;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 
 use crate::tokenizer::Position;
 use crate::tokenizer::Token;
@@ -15,6 +15,8 @@ pub enum Class {
     LocalDateTime(String),
     Ipv4Address,
     Ipv6Address,
+    Ipv4SocketAddress,
+    Ipv6SocketAddress,
 }
 
 #[derive(Debug, PartialEq, PartialOrd)]
@@ -28,6 +30,8 @@ pub enum Value {
     LocalDateTime(NaiveDateTime),
     Ipv4Address(Ipv4Addr),
     Ipv6Address(Ipv6Addr),
+    Ipv4SocketAddress(SocketAddrV4),
+    Ipv6SocketAddress(SocketAddrV6),
 }
 
 #[derive(Debug, PartialEq)]
@@ -70,6 +74,14 @@ impl Value {
             },
             Class::Ipv6Address => match word.parse::<Ipv6Addr>() {
                 Ok(address) => Ok(Value::Ipv6Address(address)),
+                Err(error) => Err(error.into()),
+            },
+            Class::Ipv4SocketAddress => match word.parse::<SocketAddrV4>() {
+                Ok(address) => Ok(Value::Ipv4SocketAddress(address)),
+                Err(error) => Err(error.into()),
+            },
+            Class::Ipv6SocketAddress => match word.parse::<SocketAddrV6>() {
+                Ok(address) => Ok(Value::Ipv6SocketAddress(address)),
                 Err(error) => Err(error.into()),
             },
         }
@@ -246,6 +258,38 @@ mod value_tests {
 
         // verify
         assert_eq!(Value::Ipv6Address(address), ok.unwrap());
+        assert_eq!(true, err_1.is_err());
+        assert_eq!(true, err_2.is_err());
+    }
+
+    #[test]
+    fn new_ipv4_socket_address() {
+        // setup
+        let address = "8.8.8.8:53".parse::<SocketAddrV4>().unwrap();
+
+        // exercise
+        let ok = Value::from(&address.to_string(), &Class::Ipv4SocketAddress);
+        let err_1 = Value::from("5.5.5.5", &Class::Ipv4SocketAddress);
+        let err_2 = Value::from("word", &Class::Ipv4SocketAddress);
+
+        // verify
+        assert_eq!(Value::Ipv4SocketAddress(address), ok.unwrap());
+        assert_eq!(true, err_1.is_err());
+        assert_eq!(true, err_2.is_err());
+    }
+
+    #[test]
+    fn new_ipv6_socket_address() {
+        // setup
+        let address = "[2001:4860:4860::8888]:53".parse::<SocketAddrV6>().unwrap();
+
+        // exercise
+        let ok = Value::from(&address.to_string(), &Class::Ipv6SocketAddress);
+        let err_1 = Value::from("2001:4860", &Class::Ipv6SocketAddress);
+        let err_2 = Value::from("word", &Class::Ipv6SocketAddress);
+
+        // verify
+        assert_eq!(Value::Ipv6SocketAddress(address), ok.unwrap());
         assert_eq!(true, err_1.is_err());
         assert_eq!(true, err_2.is_err());
     }
