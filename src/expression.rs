@@ -6,9 +6,9 @@ use std::collections::HashSet;
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 
 use crate::filter::Formats;
-use crate::parser::Class;
 use crate::parser::FromWord;
 use crate::parser::Id;
+use crate::parser::Parser;
 use crate::parser::Term;
 use crate::tokenizer::Position;
 use crate::tokenizer::Token;
@@ -160,102 +160,102 @@ peg::parser!(pub grammar expression() for str {
     // terms
     //
     rule integers(tokens: &Vec<Token>) -> Vec<Term<i64>>
-        = "$integer" { Term::<i64>::from_tokens(tokens, &Class::Integer) }
+        = "$integer" { Parser::<i64, ()>::from_tokens(tokens, &()) }
 
     rule floats(tokens: &Vec<Token>) -> Vec<Term<f64>>
-        = "$float" { Term::<f64>::from_tokens(tokens, &Class::Float) }
+        = "$float" { Parser::<f64, ()>::from_tokens(tokens, &()) }
 
     rule ids(tokens: &Vec<Token>) -> Vec<Term<Id>>
-        = "$id" { Term::<Id>::from_tokens(tokens, &Class::Id) }
+        = "$id" { Parser::<Id, ()>::from_tokens(tokens, &()) }
 
     rule dates(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term<NaiveDate>>
-        = "$date" { Term::<NaiveDate>::from_tokens(tokens, &Class::Date(formats.date.to_string())) }
+        = "$date" { Parser::<NaiveDate, String>::from_tokens(tokens, &formats.date) }
 
     rule times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term<NaiveTime>>
-        = "$time" { Term::<NaiveTime>::from_tokens(tokens, &Class::Time(formats.time.to_string())) }
+        = "$time" { Parser::<NaiveTime, String>::from_tokens(tokens, &formats.time) }
 
     rule date_times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term<DateTime<FixedOffset>>>
-        = "$dateTime" { Term::<DateTime<FixedOffset>>::from_tokens(tokens, &Class::DateTime(formats.date_time.to_string())) }
+        = "$dateTime" { Parser::<DateTime<FixedOffset>, String>::from_tokens(tokens, &formats.date_time) }
 
     rule local_date_times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term<NaiveDateTime>>
-        = "$localDateTime" { Term::<NaiveDateTime>::from_tokens(tokens, &Class::LocalDateTime(formats.local_date_time.to_string())) }
+        = "$localDateTime" { Parser::<NaiveDateTime, String>::from_tokens(tokens, &formats.local_date_time) }
 
     rule ipv4_addresses(tokens: &Vec<Token>) -> Vec<Term<Ipv4Addr>>
-        = "$ipv4Address" { Term::<Ipv4Addr>::from_tokens(tokens, &Class::Ipv4Address) }
+        = "$ipv4Address" { Parser::<Ipv4Addr, ()>::from_tokens(tokens, &()) }
 
     rule ipv6_addresses(tokens: &Vec<Token>) -> Vec<Term<Ipv6Addr>>
-        = "$ipv6Address" { Term::<Ipv6Addr>::from_tokens(tokens, &Class::Ipv6Address) }
+        = "$ipv6Address" { Parser::<Ipv6Addr, ()>::from_tokens(tokens, &()) }
 
     rule ipv4_socket_addresses(tokens: &Vec<Token>) -> Vec<Term<SocketAddrV4>>
-        = "$ipv4SocketAddress" { Term::<SocketAddrV4>::from_tokens(tokens, &Class::Ipv4SocketAddress) }
+        = "$ipv4SocketAddress" { Parser::<SocketAddrV4, ()>::from_tokens(tokens, &()) }
 
     rule ipv6_socket_addresses(tokens: &Vec<Token>) -> Vec<Term<SocketAddrV6>>
-        = "$ipv6SocketAddress" { Term::<SocketAddrV6>::from_tokens(tokens, &Class::Ipv6SocketAddress) }
+        = "$ipv6SocketAddress" { Parser::<SocketAddrV6, ()>::from_tokens(tokens, &()) }
 
     rule semantic_versions(tokens: &Vec<Token>) -> Vec<Term<Version>>
-        = "$semanticVersion" { Term::<Version>::from_tokens(tokens, &Class::SemanticVersion) }
+        = "$semanticVersion" { Parser::<Version, ()>::from_tokens(tokens, &()) }
 
     //
     // values
     //
     rule integer() -> i64
         = n:$(['+'|'-']? ['0'..='9']+) {?
-            i64::from_word(n, &Class::Integer).map_err(|_| "failed to parse integer")
+            i64::from_word(n, &()).map_err(|_| "failed to parse integer")
         }
 
     rule float() -> f64
         = n:$(['+'|'-']? ['0'..='9']* ['.']? ['0'..='9']*) {?
-            f64::from_word(n, &Class::Float).map_err(|_| "failed to parse float")
+            f64::from_word(n, &()).map_err(|_| "failed to parse float")
         }
 
     rule id() -> Id
         = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'.'|':'|'_'|'-']+) {?
-            Id::from_word(n, &Class::Id).map_err(|_| "failed to parse id")
+            Id::from_word(n, &()).map_err(|_| "failed to parse id")
         }
 
     rule date(formats: &Formats) -> NaiveDate
         = n:$([^'('|')'|' ']+) {?
-            NaiveDate::from_word(n, &Class::Date(formats.date.to_string())).map_err(|_| "failed to parse date")
+            NaiveDate::from_word(n, &formats.date).map_err(|_| "failed to parse date")
         }
 
     rule time(formats: &Formats) -> NaiveTime
         = n:$([^'('|')'|' ']+) {?
-            NaiveTime::from_word(n, &Class::Time(formats.time.to_string())).map_err(|_| "failed to parse time")
+            NaiveTime::from_word(n, &formats.time).map_err(|_| "failed to parse time")
         }
 
     rule date_time(formats: &Formats) -> DateTime<FixedOffset>
         = n:$([^'('|')'|' ']+) {?
-            DateTime::<FixedOffset>::from_word(n, &Class::DateTime(formats.date_time.to_string())).map_err(|_| "failed to parse dateTime")
+            DateTime::<FixedOffset>::from_word(n, &formats.date_time).map_err(|_| "failed to parse dateTime")
         }
 
     rule local_date_time(formats: &Formats) -> NaiveDateTime
         = n:$([^'('|')'|' ']+) {?
-            NaiveDateTime::from_word(n, &Class::LocalDateTime(formats.local_date_time.to_string())).map_err(|_| "failed to parse localDateTime")
+            NaiveDateTime::from_word(n, &formats.local_date_time).map_err(|_| "failed to parse localDateTime")
         }
 
     rule ipv4_address() -> Ipv4Addr
         = n:$([^'('|')'|' ']+) {?
-            Ipv4Addr::from_word(n, &Class::Ipv4Address).map_err(|_| "failed to parse IPv4 address")
+            Ipv4Addr::from_word(n, &()).map_err(|_| "failed to parse IPv4 address")
         }
 
     rule ipv6_address() -> Ipv6Addr
         = n:$([^'('|')'|' ']+) {?
-            Ipv6Addr::from_word(n, &Class::Ipv6Address).map_err(|_| "failed to parse IPv6 address")
+            Ipv6Addr::from_word(n, &()).map_err(|_| "failed to parse IPv6 address")
         }
 
     rule ipv4_socket_address() -> SocketAddrV4
         = n:$([^'('|')'|' ']+) {?
-            SocketAddrV4::from_word(n, &Class::Ipv4SocketAddress).map_err(|_| "failed to parse IPv4 socket address")
+            SocketAddrV4::from_word(n, &()).map_err(|_| "failed to parse IPv4 socket address")
         }
 
     rule ipv6_socket_address() -> SocketAddrV6
         = n:$([^'('|')'|' ']+) {?
-            SocketAddrV6::from_word(n, &Class::Ipv6SocketAddress).map_err(|_| "failed to parse IPv6 socket address")
+            SocketAddrV6::from_word(n, &()).map_err(|_| "failed to parse IPv6 socket address")
         }
 
     rule semantic_version() -> Version
         = n:$([^'('|')'|' ']+) {?
-            Version::from_word(n, &Class::SemanticVersion).map_err(|_| "failed to parse semantic version")
+            Version::from_word(n, &()).map_err(|_| "failed to parse semantic version")
         }
 });
 
