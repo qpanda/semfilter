@@ -11,6 +11,9 @@ use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
 use std::str::FromStr;
 
+const NAME: &str = env!("CARGO_PKG_NAME");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub struct Arguments {
     pub input: Box<dyn Read>,
     pub output: Box<dyn Write>,
@@ -31,9 +34,9 @@ impl Arguments {
         let date_time_format = "date-time-format";
         let local_date_time_format = "local-date-time-format";
         let expression_argument = "expression";
-        let semfilter_command = App::new("semfilter")
-            .version("0.1")
-            .about("semfilter filters unstructured text by matching tokens found on each input lines against an expression")
+        let semfilter_command = App::new(NAME)
+            .version(VERSION)
+            .about("semfilter filters semi-structured and unstructured text by matching tokens found on each input lines against expressions specified by the user")
             .arg(
                 Arg::with_name(input_argument)
                     .short("i")
