@@ -1,11 +1,15 @@
 extern crate peg;
 
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
+use semver::Version;
 use std::collections::HashSet;
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 
 use crate::filter::Formats;
 use crate::parser::Class;
+use crate::parser::FromWord;
+use crate::parser::Id;
 use crate::parser::Term;
-use crate::parser::Value;
 use crate::tokenizer::Position;
 use crate::tokenizer::Token;
 
@@ -155,109 +159,109 @@ peg::parser!(pub grammar expression() for str {
     //
     // terms
     //
-    rule integers(tokens: &Vec<Token>) -> Vec<Term>
-        = "$integer" { Term::from_tokens(tokens, &Class::Integer) }
+    rule integers(tokens: &Vec<Token>) -> Vec<Term<i64>>
+        = "$integer" { Term::<i64>::from_tokens(tokens, &Class::Integer) }
 
-    rule floats(tokens: &Vec<Token>) -> Vec<Term>
-        = "$float" { Term::from_tokens(tokens, &Class::Float) }
+    rule floats(tokens: &Vec<Token>) -> Vec<Term<f64>>
+        = "$float" { Term::<f64>::from_tokens(tokens, &Class::Float) }
 
-    rule ids(tokens: &Vec<Token>) -> Vec<Term>
-        = "$id" { Term::from_tokens(tokens, &Class::Id) }
+    rule ids(tokens: &Vec<Token>) -> Vec<Term<Id>>
+        = "$id" { Term::<Id>::from_tokens(tokens, &Class::Id) }
 
-    rule dates(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term>
-        = "$date" { Term::from_tokens(tokens, &Class::Date(formats.date.to_string())) }
+    rule dates(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term<NaiveDate>>
+        = "$date" { Term::<NaiveDate>::from_tokens(tokens, &Class::Date(formats.date.to_string())) }
 
-    rule times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term>
-        = "$time" { Term::from_tokens(tokens, &Class::Time(formats.time.to_string())) }
+    rule times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term<NaiveTime>>
+        = "$time" { Term::<NaiveTime>::from_tokens(tokens, &Class::Time(formats.time.to_string())) }
 
-    rule date_times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term>
-        = "$dateTime" { Term::from_tokens(tokens, &Class::DateTime(formats.date_time.to_string())) }
+    rule date_times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term<DateTime<FixedOffset>>>
+        = "$dateTime" { Term::<DateTime<FixedOffset>>::from_tokens(tokens, &Class::DateTime(formats.date_time.to_string())) }
 
-    rule local_date_times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term>
-        = "$localDateTime" { Term::from_tokens(tokens, &Class::LocalDateTime(formats.local_date_time.to_string())) }
+    rule local_date_times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term<NaiveDateTime>>
+        = "$localDateTime" { Term::<NaiveDateTime>::from_tokens(tokens, &Class::LocalDateTime(formats.local_date_time.to_string())) }
 
-    rule ipv4_addresses(tokens: &Vec<Token>) -> Vec<Term>
-        = "$ipv4Address" { Term::from_tokens(tokens, &Class::Ipv4Address) }
+    rule ipv4_addresses(tokens: &Vec<Token>) -> Vec<Term<Ipv4Addr>>
+        = "$ipv4Address" { Term::<Ipv4Addr>::from_tokens(tokens, &Class::Ipv4Address) }
 
-    rule ipv6_addresses(tokens: &Vec<Token>) -> Vec<Term>
-        = "$ipv6Address" { Term::from_tokens(tokens, &Class::Ipv6Address) }
+    rule ipv6_addresses(tokens: &Vec<Token>) -> Vec<Term<Ipv6Addr>>
+        = "$ipv6Address" { Term::<Ipv6Addr>::from_tokens(tokens, &Class::Ipv6Address) }
 
-    rule ipv4_socket_addresses(tokens: &Vec<Token>) -> Vec<Term>
-        = "$ipv4SocketAddress" { Term::from_tokens(tokens, &Class::Ipv4SocketAddress) }
+    rule ipv4_socket_addresses(tokens: &Vec<Token>) -> Vec<Term<SocketAddrV4>>
+        = "$ipv4SocketAddress" { Term::<SocketAddrV4>::from_tokens(tokens, &Class::Ipv4SocketAddress) }
 
-    rule ipv6_socket_addresses(tokens: &Vec<Token>) -> Vec<Term>
-        = "$ipv6SocketAddress" { Term::from_tokens(tokens, &Class::Ipv6SocketAddress) }
+    rule ipv6_socket_addresses(tokens: &Vec<Token>) -> Vec<Term<SocketAddrV6>>
+        = "$ipv6SocketAddress" { Term::<SocketAddrV6>::from_tokens(tokens, &Class::Ipv6SocketAddress) }
 
-    rule semantic_versions(tokens: &Vec<Token>) -> Vec<Term>
-        = "$semanticVersion" { Term::from_tokens(tokens, &Class::SemanticVersion) }
+    rule semantic_versions(tokens: &Vec<Token>) -> Vec<Term<Version>>
+        = "$semanticVersion" { Term::<Version>::from_tokens(tokens, &Class::SemanticVersion) }
 
     //
     // values
     //
-    rule integer() -> Value
+    rule integer() -> i64
         = n:$(['+'|'-']? ['0'..='9']+) {?
-            Value::from_word(n, &Class::Integer).map_err(|_| "failed to parse integer")
+            i64::from_word(n, &Class::Integer).map_err(|_| "failed to parse integer")
         }
 
-    rule float() -> Value
+    rule float() -> f64
         = n:$(['+'|'-']? ['0'..='9']* ['.']? ['0'..='9']*) {?
-            Value::from_word(n, &Class::Float).map_err(|_| "failed to parse float")
+            f64::from_word(n, &Class::Float).map_err(|_| "failed to parse float")
         }
 
-    rule id() -> Value
+    rule id() -> Id
         = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'.'|':'|'_'|'-']+) {?
-            Value::from_word(n, &Class::Id).map_err(|_| "failed to parse id")
+            Id::from_word(n, &Class::Id).map_err(|_| "failed to parse id")
         }
 
-    rule date(formats: &Formats) -> Value
+    rule date(formats: &Formats) -> NaiveDate
         = n:$([^'('|')'|' ']+) {?
-            Value::from_word(n, &Class::Date(formats.date.to_string())).map_err(|_| "failed to parse date")
+            NaiveDate::from_word(n, &Class::Date(formats.date.to_string())).map_err(|_| "failed to parse date")
         }
 
-    rule time(formats: &Formats) -> Value
+    rule time(formats: &Formats) -> NaiveTime
         = n:$([^'('|')'|' ']+) {?
-            Value::from_word(n, &Class::Time(formats.time.to_string())).map_err(|_| "failed to parse time")
+            NaiveTime::from_word(n, &Class::Time(formats.time.to_string())).map_err(|_| "failed to parse time")
         }
 
-    rule date_time(formats: &Formats) -> Value
+    rule date_time(formats: &Formats) -> DateTime<FixedOffset>
         = n:$([^'('|')'|' ']+) {?
-            Value::from_word(n, &Class::DateTime(formats.date_time.to_string())).map_err(|_| "failed to parse dateTime")
+            DateTime::<FixedOffset>::from_word(n, &Class::DateTime(formats.date_time.to_string())).map_err(|_| "failed to parse dateTime")
         }
 
-    rule local_date_time(formats: &Formats) -> Value
+    rule local_date_time(formats: &Formats) -> NaiveDateTime
         = n:$([^'('|')'|' ']+) {?
-            Value::from_word(n, &Class::LocalDateTime(formats.local_date_time.to_string())).map_err(|_| "failed to parse localDateTime")
+            NaiveDateTime::from_word(n, &Class::LocalDateTime(formats.local_date_time.to_string())).map_err(|_| "failed to parse localDateTime")
         }
 
-    rule ipv4_address() -> Value
+    rule ipv4_address() -> Ipv4Addr
         = n:$([^'('|')'|' ']+) {?
-            Value::from_word(n, &Class::Ipv4Address).map_err(|_| "failed to parse IPv4 address")
+            Ipv4Addr::from_word(n, &Class::Ipv4Address).map_err(|_| "failed to parse IPv4 address")
         }
 
-    rule ipv6_address() -> Value
+    rule ipv6_address() -> Ipv6Addr
         = n:$([^'('|')'|' ']+) {?
-            Value::from_word(n, &Class::Ipv6Address).map_err(|_| "failed to parse IPv6 address")
+            Ipv6Addr::from_word(n, &Class::Ipv6Address).map_err(|_| "failed to parse IPv6 address")
         }
 
-    rule ipv4_socket_address() -> Value
+    rule ipv4_socket_address() -> SocketAddrV4
         = n:$([^'('|')'|' ']+) {?
-            Value::from_word(n, &Class::Ipv4SocketAddress).map_err(|_| "failed to parse IPv4 socket address")
+            SocketAddrV4::from_word(n, &Class::Ipv4SocketAddress).map_err(|_| "failed to parse IPv4 socket address")
         }
 
-    rule ipv6_socket_address() -> Value
+    rule ipv6_socket_address() -> SocketAddrV6
         = n:$([^'('|')'|' ']+) {?
-            Value::from_word(n, &Class::Ipv6SocketAddress).map_err(|_| "failed to parse IPv6 socket address")
+            SocketAddrV6::from_word(n, &Class::Ipv6SocketAddress).map_err(|_| "failed to parse IPv6 socket address")
         }
 
-    rule semantic_version() -> Value
+    rule semantic_version() -> Version
         = n:$([^'('|')'|' ']+) {?
-            Value::from_word(n, &Class::SemanticVersion).map_err(|_| "failed to parse semantic version")
+            Version::from_word(n, &Class::SemanticVersion).map_err(|_| "failed to parse semantic version")
         }
 });
 
-fn matches<P>(terms: &Vec<Term>, predicate: P) -> HashSet<Position>
+fn matches<T, P>(terms: &Vec<Term<T>>, predicate: P) -> HashSet<Position>
 where
-    P: FnMut(&&Term) -> bool,
+    P: FnMut(&&Term<T>) -> bool,
 {
     terms
         .into_iter()
@@ -274,30 +278,18 @@ mod matches_tests {
     fn integer_matches() {
         // setup
         let integers = vec![
-            Term {
-                position: 2,
-                value: Value::Integer(1),
-            },
-            Term {
-                position: 4,
-                value: Value::Integer(2),
-            },
-            Term {
-                position: 6,
-                value: Value::Integer(3),
-            },
+            Term { position: 2, value: 1 },
+            Term { position: 4, value: 2 },
+            Term { position: 6, value: 3 },
         ];
 
         // exercise
-        let integers_eq_integer_0 = matches(&integers, |term| term.value == Value::Integer(0));
-        let integers_eq_integer_2 = matches(&integers, |term| term.value == Value::Integer(2));
-        let integeres_ne_integer_0 = matches(&integers, |term| term.value != Value::Integer(0));
-        let integers_ne_integer_2 = matches(&integers, |term| term.value != Value::Integer(2));
-        let integers_gt_integer_0 = matches(&integers, |term| term.value > Value::Integer(0));
-        let integers_lt_integer_0 = matches(&integers, |term| term.value < Value::Integer(0));
-        let integers_eq_float_2 = matches(&integers, |term| term.value == Value::Float(2.0));
-        let integers_gt_float_0 = matches(&integers, |term| term.value > Value::Float(0.0));
-        let integers_eq_id_2 = matches(&integers, |term| term.value > Value::Id(String::from("2")));
+        let integers_eq_integer_0 = matches(&integers, |term| term.value == 0);
+        let integers_eq_integer_2 = matches(&integers, |term| term.value == 2);
+        let integeres_ne_integer_0 = matches(&integers, |term| term.value != 0);
+        let integers_ne_integer_2 = matches(&integers, |term| term.value != 2);
+        let integers_gt_integer_0 = matches(&integers, |term| term.value > 0);
+        let integers_lt_integer_0 = matches(&integers, |term| term.value < 0);
 
         // verify
         assert_eq!(HashSet::from([]), integers_eq_integer_0);
@@ -306,9 +298,6 @@ mod matches_tests {
         assert_eq!(HashSet::from([2, 6]), integers_ne_integer_2);
         assert_eq!(HashSet::from([2, 4, 6]), integers_gt_integer_0);
         assert_eq!(HashSet::from([]), integers_lt_integer_0);
-        assert_eq!(HashSet::from([]), integers_eq_float_2);
-        assert_eq!(HashSet::from([]), integers_gt_float_0);
-        assert_eq!(HashSet::from([]), integers_eq_id_2);
     }
 }
 
