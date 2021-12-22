@@ -1,6 +1,7 @@
 use anyhow::Error;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
 use semver::Version;
+use std::marker::PhantomData;
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 
 use crate::tokenizer::Position;
@@ -90,7 +91,7 @@ pub struct Term<T> {
     pub value: T,
 }
 
-pub struct Parser<T, F>(T, F);
+pub struct Parser<T, F>(PhantomData<T>, PhantomData<F>);
 
 impl<T: FromWord<F>, F> Parser<T, F> {
     pub fn from_tokens(tokens: &Vec<Token>, format: &F) -> Vec<Term<T>> {
