@@ -14,19 +14,13 @@ pub trait FromWord<F>: Sized {
 
 impl FromWord<()> for i64 {
     fn from_word(word: &str, _: &()) -> Result<Self, Error> {
-        match word.parse::<i64>() {
-            Ok(integer) => Ok(integer),
-            Err(error) => Err(error.into()),
-        }
+        word.parse::<i64>().map_err(|e| e.into())
     }
 }
 
 impl FromWord<()> for f64 {
     fn from_word(word: &str, _: &()) -> Result<Self, Error> {
-        match word.parse::<f64>() {
-            Ok(float) => Ok(float),
-            Err(error) => Err(error.into()),
-        }
+        word.parse::<f64>().map_err(|e| e.into())
     }
 }
 
@@ -38,82 +32,55 @@ impl FromWord<()> for Id {
 
 impl FromWord<String> for NaiveDate {
     fn from_word(word: &str, format: &String) -> Result<Self, Error> {
-        match NaiveDate::parse_from_str(word, format) {
-            Ok(date) => Ok(date),
-            Err(error) => Err(error.into()),
-        }
+        NaiveDate::parse_from_str(word, format).map_err(|e| e.into())
     }
 }
 
 impl FromWord<String> for NaiveTime {
     fn from_word(word: &str, format: &String) -> Result<Self, Error> {
-        match NaiveTime::parse_from_str(word, format) {
-            Ok(time) => Ok(time),
-            Err(error) => Err(error.into()),
-        }
+        NaiveTime::parse_from_str(word, format).map_err(|e| e.into())
     }
 }
 
 impl FromWord<String> for DateTime<FixedOffset> {
     fn from_word(word: &str, format: &String) -> Result<Self, Error> {
-        match DateTime::parse_from_str(word, format) {
-            Ok(date_time) => Ok(date_time),
-            Err(error) => Err(error.into()),
-        }
+        DateTime::parse_from_str(word, format).map_err(|e| e.into())
     }
 }
 
 impl FromWord<String> for NaiveDateTime {
     fn from_word(word: &str, format: &String) -> Result<Self, Error> {
-        match NaiveDateTime::parse_from_str(word, format) {
-            Ok(local_date_time) => Ok(local_date_time),
-            Err(error) => Err(error.into()),
-        }
+        NaiveDateTime::parse_from_str(word, format).map_err(|e| e.into())
     }
 }
 
 impl FromWord<()> for Ipv4Addr {
     fn from_word(word: &str, _: &()) -> Result<Self, Error> {
-        match word.parse::<Ipv4Addr>() {
-            Ok(address) => Ok(address),
-            Err(error) => Err(error.into()),
-        }
+        word.parse::<Ipv4Addr>().map_err(|e| e.into())
     }
 }
 
 impl FromWord<()> for Ipv6Addr {
     fn from_word(word: &str, _: &()) -> Result<Self, Error> {
-        match word.parse::<Ipv6Addr>() {
-            Ok(address) => Ok(address),
-            Err(error) => Err(error.into()),
-        }
+        word.parse::<Ipv6Addr>().map_err(|e| e.into())
     }
 }
 
 impl FromWord<()> for SocketAddrV4 {
     fn from_word(word: &str, _: &()) -> Result<Self, Error> {
-        match word.parse::<SocketAddrV4>() {
-            Ok(address) => Ok(address),
-            Err(error) => Err(error.into()),
-        }
+        word.parse::<SocketAddrV4>().map_err(|e| e.into())
     }
 }
 
 impl FromWord<()> for SocketAddrV6 {
     fn from_word(word: &str, _: &()) -> Result<Self, Error> {
-        match word.parse::<SocketAddrV6>() {
-            Ok(address) => Ok(address),
-            Err(error) => Err(error.into()),
-        }
+        word.parse::<SocketAddrV6>().map_err(|e| e.into())
     }
 }
 
 impl FromWord<()> for Version {
     fn from_word(word: &str, _: &()) -> Result<Self, Error> {
-        match Version::parse(word) {
-            Ok(version) => Ok(version),
-            Err(error) => Err(error.into()),
-        }
+        Version::parse(word).map_err(|e| e.into())
     }
 }
 
