@@ -16,6 +16,7 @@ pub const SPACE: &str = " ";
 pub const COMMA: &str = ",";
 pub const SEMICOLON: &str = ";";
 pub const PIPE: &str = "|";
+pub const SLASH: &str = "/";
 
 pub struct Separators {
     whitespaces: bool,
@@ -38,6 +39,8 @@ impl Separators {
                 characters.insert(SEMICOLON.chars().next().expect("semicolon separator invalid"));
             } else if separator == PIPE {
                 characters.insert(PIPE.chars().next().expect("pipe separator invalid"));
+            } else if separator == SLASH {
+                characters.insert(SLASH.chars().next().expect("slash separator invalid"));
             } else {
                 return Err(anyhow!("invalid separator '{}'", separator));
             }
@@ -122,6 +125,7 @@ mod separators_tests {
         assert!(Separators::new(vec![SPACE]).is_ok());
         assert!(Separators::new(vec![COMMA]).is_ok());
         assert!(Separators::new(vec![SEMICOLON]).is_ok());
+        assert!(Separators::new(vec![SLASH]).is_ok());
         assert!(Separators::new(vec![PIPE]).is_ok());
     }
 

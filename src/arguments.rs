@@ -3,7 +3,7 @@ use crate::filter::{Formats, Mode, Settings};
 use crate::filter::{DATE_FORMAT, DATE_TIME_FORMAT, LOCAL_DATE_TIME_FORMAT, TIME_FORMAT};
 use crate::filter::{FILTER, FILTER_HIGHLIGHT, HIGHLIGHT};
 use crate::tokenizer::Separators;
-use crate::tokenizer::{COMMA, PIPE, SEMICOLON, SPACE, WHITESPACE};
+use crate::tokenizer::{COMMA, PIPE, SEMICOLON, SLASH, SPACE, WHITESPACE};
 use anyhow::{anyhow, Context, Error};
 use chrono::format::{strftime::StrftimeItems, Item};
 use clap::{App, Arg};
@@ -114,7 +114,7 @@ impl Arguments {
                     .multiple(true)
                     .number_of_values(1)
                     .default_value(WHITESPACE)
-                    .possible_values(&[SPACE, COMMA, SEMICOLON, PIPE, WHITESPACE])
+                    .possible_values(&[SPACE, COMMA, SEMICOLON, PIPE, SLASH, WHITESPACE])
                     .help("separator(s) used to split input line into tokens")
                     .next_line_help(true),
             )
