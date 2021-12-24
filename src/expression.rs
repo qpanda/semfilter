@@ -234,22 +234,22 @@ peg::parser!(pub grammar expression() for str {
         }
 
     rule ipv4_address() -> Ipv4Addr
-        = n:$([^'('|')'|' ']+) {?
+        = n:$(['0'..='9'|'.']+) {?
             Ipv4Addr::from_word(n, &()).map_err(|_| "failed to parse IPv4 address")
         }
 
     rule ipv6_address() -> Ipv6Addr
-        = n:$([^'('|')'|' ']+) {?
+        = n:$(['0'..='9'|'a'..='f'|'A'..='F'|':']+) {?
             Ipv6Addr::from_word(n, &()).map_err(|_| "failed to parse IPv6 address")
         }
 
     rule ipv4_socket_address() -> SocketAddrV4
-        = n:$([^'('|')'|' ']+) {?
+        = n:$(['0'..='9'|'.'|':']+) {?
             SocketAddrV4::from_word(n, &()).map_err(|_| "failed to parse IPv4 socket address")
         }
 
     rule ipv6_socket_address() -> SocketAddrV6
-        = n:$([^'('|')'|' ']+) {?
+        = n:$(['0'..='9'|'a'..='f'|'A'..='F'|':'|'['|']']+) {?
             SocketAddrV6::from_word(n, &()).map_err(|_| "failed to parse IPv6 socket address")
         }
 
