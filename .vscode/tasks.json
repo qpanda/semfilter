@@ -29,6 +29,11 @@
 				"kind": "test",
 				"isDefault": true
 			},
+			"options": {
+				"env": {
+					"RUST_BACKTRACE": "1",
+				}
+			},
 			"label": "Rust: cargo test - semfilter"
 		}
 	]
