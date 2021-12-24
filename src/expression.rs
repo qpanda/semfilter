@@ -254,7 +254,7 @@ peg::parser!(pub grammar expression() for str {
         }
 
     rule semantic_version() -> Version
-        = n:$([^'('|')'|' ']+) {?
+        = n:$(['0'..='9'|'.']+) {?
             Version::from_word(n, &()).map_err(|_| "failed to parse semantic version")
         }
 });
