@@ -307,9 +307,14 @@ mod expression_tests {
     use crate::filter::test_utils;
 
     #[test]
+    fn invalid_expressions() {
+        assert_invalid_expression("()");
+        assert_invalid_expression("wrong == 9");
+    }
+
+    #[test]
     fn invalid_integer_expressions() {
         assert_invalid_expression("$integer + 9");
-        assert_invalid_expression("wrong == 9");
         assert_invalid_expression("$integer == a");
     }
 
@@ -322,6 +327,12 @@ mod expression_tests {
         assert_valid_expression("$integer < 9");
         assert_valid_expression("$integer <= 9");
         assert_valid_expression("($integer == 9)");
+    }
+
+    #[test]
+    fn invalid_date_expressions() {
+        assert_invalid_expression("$date + 2021-01-01");
+        assert_invalid_expression("$date == a");
     }
 
     #[test]
@@ -339,6 +350,7 @@ mod expression_tests {
     fn valid_and_expressions() {
         assert_valid_expression("$integer > 9 and $integer > 8");
         assert_valid_expression("$date > 2021-01-01 and $integer > 8");
+        assert_valid_expression("$integer > 9 and $date > 2021-01-01");
         assert_valid_expression("$integer > 9 and ($integer > 8 and $integer > 7)");
         assert_valid_expression("($integer > 9 and $integer > 8) and $integer > 7");
         assert_valid_expression("$integer > 9 and $float < 5.5");
@@ -348,18 +360,20 @@ mod expression_tests {
 
     #[test]
     fn invalid_and_expressions() {
-        assert_invalid_expression("()");
-        assert_invalid_expression("$integer > 9 and $integer > 8 and $integer > 7");
         assert_invalid_expression("$integer > 9 && $integer > 8");
         assert_invalid_expression("$integer > 9 and < 5.5");
         assert_invalid_expression("$integer > 9 (and < 5.5)");
         assert_invalid_expression("($integer > 9)($integer > 8)");
         assert_invalid_expression("(($integer > 9)($integer > 8))");
+        assert_invalid_expression("$integer > 9 and $integer > 8 and $integer > 7");
+        assert_invalid_expression("$integer > 9 and $integer > 8 and $integer > 7 and $integer > 6");
+        assert_invalid_expression("$integer > 9 and $integer > 8) and ($integer > 7 and $integer > 6");
     }
 
     #[test]
     fn valid_or_expressions() {
         assert_valid_expression("$integer > 9 or $integer > 8");
+        assert_valid_expression("$date > 2021-01-01 or $integer > 8");
         assert_valid_expression("$integer > 9 or $date > 2021-01-01");
         assert_valid_expression("$integer > 9 or ($integer > 8 or $integer > 7)");
         assert_valid_expression("($integer > 9 or $integer > 8) or $integer > 7");
@@ -371,12 +385,14 @@ mod expression_tests {
     #[test]
     fn invalid_or_expressions() {
         assert_invalid_expression("()");
-        assert_invalid_expression("$integer > 9 or $integer > 8 or $integer > 7");
         assert_invalid_expression("$integer > 9 || $integer > 8");
         assert_invalid_expression("$integer > 9 or < 5.5");
         assert_invalid_expression("$integer > 9 (or < 5.5)");
         assert_invalid_expression("($integer > 9)($integer > 8)");
         assert_invalid_expression("(($integer > 9)($integer > 8))");
+        assert_invalid_expression("$integer > 9 or $integer > 8 or $integer > 7");
+        assert_invalid_expression("$integer > 9 or $integer > 8 or $integer > 7 or $integer > 6");
+        assert_invalid_expression("$integer > 9 or $integer > 8) or ($integer > 7 or $integer > 6");
     }
 
     #[test]
@@ -384,10 +400,39 @@ mod expression_tests {
         assert_valid_expression("$integer > 9 and $integer > 8 or $float < 5.5");
         assert_valid_expression("$integer > 9 and ($integer > 8 or $float < 5.5)");
         assert_valid_expression("($integer > 9 and $integer > 8) or $float < 5.5");
+        assert_valid_expression("($integer > 9) and ($integer > 8) or ($float < 5.5)");
+    }
+
+    #[test]
+    fn valid_or_and_expressions() {
         assert_valid_expression("$integer > 9 or $integer > 8 and $float < 5.5");
         assert_valid_expression("$integer > 9 or ($integer > 8 and $float < 5.5)");
         assert_valid_expression("($integer > 9 or $integer > 8) and $float < 5.5");
-        assert_valid_expression("($integer > 9) and ($integer > 8) or ($float < 5.5)");
+        assert_valid_expression("($integer > 9) or ($integer > 8) and ($float < 5.5)");
+    }
+
+    #[test]
+    fn valid_and_and_expressions() {
+        assert_valid_expression("$integer > 9 and ($integer > 8 and $float < 5.5)");
+        assert_valid_expression("($integer > 9 and $integer > 8) and $float < 5.5");
+    }
+
+    #[test]
+    fn invalid_and_and_expressions() {
+        assert_invalid_expression("$integer > 9 and $integer > 8 and $float < 5.5");
+        assert_invalid_expression("($integer > 9) and ($integer > 8) and ($float < 5.5)");
+    }
+
+    #[test]
+    fn valid_or_or_expressions() {
+        assert_valid_expression("$integer > 9 or ($integer > 8 or $float < 5.5)");
+        assert_valid_expression("($integer > 9 or $integer > 8) or $float < 5.5");
+    }
+
+    #[test]
+    fn invalid_or_or_expressions() {
+        assert_invalid_expression("$integer > 9 or $integer > 8 or $float < 5.5");
+        assert_invalid_expression("($integer > 9) or ($integer > 8) or ($float < 5.5)");
     }
 
     fn assert_valid_expression(expression: &str) {
