@@ -3,7 +3,7 @@ use crate::filter::{Formats, Mode, Settings};
 use crate::filter::{DATE_FORMAT, DATE_TIME_FORMAT, LOCAL_DATE_TIME_FORMAT, TIME_FORMAT};
 use crate::filter::{FILTER, FILTER_HIGHLIGHT, HIGHLIGHT};
 use crate::tokenizer::Separators;
-use crate::tokenizer::{COMMA, PIPE, SEMICOLON, SLASH, SPACE, WHITESPACE};
+use crate::tokenizer::{SEPARATORS, WHITESPACES};
 use anyhow::{anyhow, Context, Error};
 use chrono::format::{strftime::StrftimeItems, Item};
 use clap::{App, Arg};
@@ -68,6 +68,10 @@ The following are examples of filter expressions with explanation:
     '0.1.0' and the id 'david' or the id 'sara'
 "#;
 
+pub const DEFAULT_SEPARATORS: &'static [&'static str] = &[
+    " ", ",", ";", "|", "!", "\"", "#", "%", "&", "(", ")", "*", "<", "=", ">", "?", "@", "\\", "^", "{", "}", "~",
+];
+
 pub struct Arguments {
     pub input: Box<dyn Read>,
     pub output: Box<dyn Write>,
@@ -80,7 +84,7 @@ impl Arguments {
     pub fn parse() -> Result<Self, Error> {
         let input_argument = "input";
         let output_argument = "output";
-        let separator_argument = "separator";
+        let separators_argument = "separators";
         let mode_argument = "mode";
         let count_argument = "count";
         let date_format = "date-format";
@@ -88,6 +92,10 @@ impl Arguments {
         let date_time_format = "date-time-format";
         let local_date_time_format = "local-date-time-format";
         let expression_argument = "expression";
+
+        let separators_value_delimiter = "I";
+        let separators_possible_values = &[&[WHITESPACES], SEPARATORS].concat();
+        let separators_default_value = DEFAULT_SEPARATORS.join(separators_value_delimiter);
         let semfilter_command = App::new(NAME)
             .version(VERSION)
             .about("Filters semi-structured and unstructured text by matching tokens found on each input line against a specified expressions")
@@ -108,13 +116,12 @@ impl Arguments {
                     .next_line_help(true),
             )
             .arg(
-                Arg::with_name(separator_argument)
+                Arg::with_name(separators_argument)
                     .short("s")
-                    .long("separator")
-                    .multiple(true)
-                    .number_of_values(1)
-                    .default_value(WHITESPACE)
-                    .possible_values(&[SPACE, COMMA, SEMICOLON, PIPE, SLASH, WHITESPACE])
+                    .long("separators")
+                    .value_delimiter(separators_value_delimiter)
+                    .default_value(&separators_default_value)
+                    .possible_values(separators_possible_values)
                     .help("separator(s) used to split input line into tokens")
                     .next_line_help(true),
             )
@@ -194,7 +201,7 @@ impl Arguments {
                 Box::new(File::open(output_file).context(format!("Failed to open output-file '{}'", output_file))?)
             }
         };
-        let separators = Separators::new(argument_matches.values_of(separator_argument).unwrap().collect())?;
+        let separators = Separators::new(argument_matches.values_of(separators_argument).unwrap().collect())?;
         let mode = Mode::from_str(argument_matches.value_of(mode_argument).unwrap())?;
         let count = argument_matches.is_present(count_argument);
         let date_format = argument_matches.value_of(date_format).unwrap();

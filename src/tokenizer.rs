@@ -11,12 +11,11 @@ pub struct Token<'a> {
     pub word: &'a str,
 }
 
-pub const WHITESPACE: &str = "[:space:]";
-pub const SPACE: &str = " ";
-pub const COMMA: &str = ",";
-pub const SEMICOLON: &str = ";";
-pub const PIPE: &str = "|";
-pub const SLASH: &str = "/";
+pub const WHITESPACES: &str = "[:space:]";
+pub const SEPARATORS: &'static [&'static str] = &[
+    " ", ",", ";", "|", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", "-", ".", "/", ":", "<", "=", ">", "?",
+    "@", "[", "\\", "]", "^", "_", "`", "{", "}", "~",
+];
 
 pub struct Separators {
     whitespaces: bool,
@@ -29,18 +28,10 @@ impl Separators {
         let mut characters = HashSet::new();
 
         for separator in separators {
-            if separator == WHITESPACE {
+            if WHITESPACES == separator {
                 whitespaces = true;
-            } else if separator == SPACE {
-                characters.insert(SPACE.chars().next().expect("space separator invalid"));
-            } else if separator == COMMA {
-                characters.insert(COMMA.chars().next().expect("comma separator invalid"));
-            } else if separator == SEMICOLON {
-                characters.insert(SEMICOLON.chars().next().expect("semicolon separator invalid"));
-            } else if separator == PIPE {
-                characters.insert(PIPE.chars().next().expect("pipe separator invalid"));
-            } else if separator == SLASH {
-                characters.insert(SLASH.chars().next().expect("slash separator invalid"));
+            } else if SEPARATORS.contains(&separator) {
+                characters.insert(separator.chars().next().unwrap());
             } else {
                 return Err(anyhow!("invalid separator '{}'", separator));
             }
@@ -121,35 +112,34 @@ mod separators_tests {
 
     #[test]
     fn valid_separator() {
-        assert!(Separators::new(vec![WHITESPACE]).is_ok());
-        assert!(Separators::new(vec![SPACE]).is_ok());
-        assert!(Separators::new(vec![COMMA]).is_ok());
-        assert!(Separators::new(vec![SEMICOLON]).is_ok());
-        assert!(Separators::new(vec![SLASH]).is_ok());
-        assert!(Separators::new(vec![PIPE]).is_ok());
+        assert!(Separators::new(vec![WHITESPACES]).is_ok());
+        assert!(Separators::new(vec![" "]).is_ok());
+        assert!(Separators::new(vec![","]).is_ok());
+        assert!(Separators::new(vec![";"]).is_ok());
+        assert!(Separators::new(vec!["|"]).is_ok());
     }
 
     #[test]
     fn valid_separators() {
-        assert!(Separators::new(vec![SPACE, COMMA]).is_ok());
+        assert!(Separators::new(vec![" ", ","]).is_ok());
     }
 
     #[test]
     fn invalid_separator() {
-        assert!(Separators::new(vec!["."]).is_err());
-        assert!(Separators::new(vec!["*"]).is_err());
+        assert!(Separators::new(vec!["0"]).is_err());
+        assert!(Separators::new(vec!["A"]).is_err());
     }
 
     #[test]
     fn valid_and_invalid_separators() {
-        assert!(Separators::new(vec![SPACE, "."]).is_err());
-        assert!(Separators::new(vec![".", SPACE]).is_err());
+        assert!(Separators::new(vec![" ", "A"]).is_err());
+        assert!(Separators::new(vec!["A", " "]).is_err());
     }
 
     #[test]
     fn comprise() {
         // setup
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
 
         // exercise & verify
         assert!(separators.comprise(' '));
@@ -159,7 +149,7 @@ mod separators_tests {
     #[test]
     fn comprise_any() {
         // setup
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
 
         // exercise & verify
         assert!(separators.comprise_any("abc def".chars()));
@@ -174,7 +164,7 @@ mod tokenizer_tests {
     #[test]
     fn value_only() {
         // setup
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
 
         // exercise
@@ -194,7 +184,7 @@ mod tokenizer_tests {
     #[test]
     fn separator_only() {
         // setup
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
 
         // exercise
@@ -214,7 +204,7 @@ mod tokenizer_tests {
     #[test]
     fn separators_only() {
         // setup
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
 
         // exercise
@@ -241,7 +231,7 @@ mod tokenizer_tests {
     #[test]
     fn value_separator_value() {
         // setup
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
 
         // exercise
@@ -273,7 +263,7 @@ mod tokenizer_tests {
     #[test]
     fn value_separator_separator_value() {
         // setup
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
 
         // exercise
@@ -310,7 +300,7 @@ mod tokenizer_tests {
     #[test]
     fn separator_value_separator() {
         // setup
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
 
         // exercise
@@ -342,7 +332,7 @@ mod tokenizer_tests {
     #[test]
     fn separator_separator_value_separator_separator() {
         // setup
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
 
         // exercise
@@ -384,7 +374,7 @@ mod tokenizer_tests {
     #[test]
     fn line() {
         // setup
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
 
         // exercise
@@ -446,7 +436,7 @@ mod tokenizer_tests {
     #[test]
     fn value_comma_value() {
         // setup
-        let separators = Separators::new(vec![COMMA]).unwrap();
+        let separators = Separators::new(vec![","]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
 
         // exercise
@@ -478,7 +468,7 @@ mod tokenizer_tests {
     #[test]
     fn value_whitespace_value() {
         // setup
-        let separators = Separators::new(vec![WHITESPACE]).unwrap();
+        let separators = Separators::new(vec![WHITESPACES]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
 
         // exercise
@@ -510,7 +500,7 @@ mod tokenizer_tests {
     #[test]
     fn value_comma_or_space_value() {
         // setup
-        let separators = Separators::new(vec![COMMA, SPACE]).unwrap();
+        let separators = Separators::new(vec![",", " "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
 
         // exercise

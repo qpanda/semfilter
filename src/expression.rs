@@ -15,6 +15,16 @@ use crate::tokenizer::Token;
 
 pub const GRAMMER_DELIMITERS: &'static [&'static str] = &["(", ")", " "];
 
+pub const SPECIAL_INTEGER_CHARACTERS: &'static [&'static str] = &["+", "-"];
+pub const SPECIAL_FLOAT_CHARACTERS: &'static [&'static str] = &["+", "-", "."];
+pub const SPECIAL_ID_CHARACTERS: &'static [&'static str] = &["+", "-", ".", ":", "_"];
+pub const SPECIAL_CHRONO_CHARACTERS: &'static [&'static str] = &["/", "-", ".", ":", "+"]; // excluding %c which includes space
+pub const SPECIAL_IPV4ADDRESS_CHARACTERS: &'static [&'static str] = &["."];
+pub const SPECIAL_IPV6ADDRESS_CHARACTERS: &'static [&'static str] = &[":"];
+pub const SPECIAL_IPV4SOCKETADDRESS_CHARACTERS: &'static [&'static str] = &[".", ":"];
+pub const SPECIAL_IPV6SOCKETADDRESS_CHARACTERS: &'static [&'static str] = &[":", "[", "]"];
+pub const SPECIAL_SEMANTICVERSION_CHARACTERS: &'static [&'static str] = &["."];
+
 peg::parser!(pub grammar expression() for str {
     pub rule evaluate(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
         = or(tokens, formats)
@@ -209,7 +219,7 @@ peg::parser!(pub grammar expression() for str {
         }
 
     rule id() -> Id
-        = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'.'|':'|'_'|'-']+) {?
+        = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'+'|'-'|'.'|':'|'_']+) {?
             Id::from_word(n, &()).map_err(|_| "failed to parse id")
         }
 

@@ -160,7 +160,6 @@ pub mod test_utils {
 mod tests {
     use super::*;
     use crate::tokenizer::Separators;
-    use crate::tokenizer::SPACE;
     use file_diff::diff_files;
     use tempfile::NamedTempFile;
 
@@ -173,7 +172,7 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$integer == 9";
         let settings = Settings {
@@ -211,7 +210,7 @@ mod tests {
         let mut expected_file = NamedTempFile::new().unwrap();
         writeln!(expected_file, "{}", expected_text).unwrap();
 
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
         let settings = Settings {
@@ -243,7 +242,7 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
         let settings = Settings {
@@ -275,7 +274,7 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
         let settings = Settings {
@@ -307,7 +306,7 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
         let settings = Settings {
@@ -345,7 +344,7 @@ mod tests {
         let mut expected_file = NamedTempFile::new().unwrap();
         writeln!(expected_file, "{}", expected_text).unwrap();
 
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == ipsum";
         let settings = Settings {
@@ -377,7 +376,7 @@ mod tests {
         let output_file = NamedTempFile::new().unwrap();
         let mut output = output_file.reopen().unwrap();
 
-        let separators = Separators::new(vec![SPACE]).unwrap();
+        let separators = Separators::new(vec![" "]).unwrap();
         let tokenizer = Tokenizer::new(separators).unwrap();
         let expression = "$id == abc";
         let settings = Settings {
