@@ -33,6 +33,16 @@ impl FromStr for Mode {
     }
 }
 
+impl Mode {
+    pub fn is_highlight(&self) -> bool {
+        match self {
+            Self::Filter => false,
+            Self::Highlight(_) => true,
+            Self::FilterHighlight(_) => true,
+        }
+    }
+}
+
 pub const DATE_FORMAT: &str = "%F";
 pub const TIME_FORMAT: &str = "%T";
 pub const DATE_TIME_FORMAT: &str = "%+";

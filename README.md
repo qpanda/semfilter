@@ -12,15 +12,15 @@ where `FLAGS`, `OPTIONS`, and `expression` are:
 * `OPTIONS`: Specifies optional options, for example which input-file to read from
 * `expression`: Specifies the filter expression which should be applied to each input line
 
-For an overview of supported `FLAGS` and `OPTIONS` run `semfilter -h` from the terminal window.
+Run `semfilter -h` from the terminal window for an overview of supported `FLAGS` and `OPTIONS`.
 
-For detailed information on `FLAGS` and `OPTIONS` and the syntax of `expression` run `semfilter --help` from the terminal window.
+Run `semfilter --help` from the terminal window for detailed information on `FLAGS` and `OPTIONS` and an explanation of the `expression` syntax.
 
 > **Note**: By default **semfilter** reads from **stdin** and writes to **stdout**.
 
 ## Examples
 **Filtering Git tags**
-```shell
+```console
 $ git tag
 0.1.0
 0.2.0
@@ -34,7 +34,7 @@ $
 ```
 
 **Filtering w output**
-```shell
+```console
 $ w
 21:41:07 up 12 days, 10:08,  2 users,  load average: 0.28, 0.20, 0.10
 USER      TTY      FROM        LOGIN@   IDLE   JCPU   PCPU  WHAT
