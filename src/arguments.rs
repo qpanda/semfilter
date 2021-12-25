@@ -15,58 +15,51 @@ use std::str::FromStr;
 const NAME: &str = env!("CARGO_PKG_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-const EXPRESSION_HELP: &str = r#"Filter expression applied to tokens found on each input line.
+const EXPRESSION_HELP: &str = r#"Filter expression applied to tokens found on each input line
 
 SYNTAX
-The supported syntax of filter expressions is shown in BNF below:
+The expression can be a single <condition> or multiple <condition>s combined
+with <operator>s. In complex expressions parenthesis can be used to group
+<condition>s. Each <condition> compares a <type> with a <value> using a
+<comparator>.
 
-<expression> ::= <conditions>
-<conditions> ::= <condition> | "(" <conditions> ")" |
-                 <conditions> <operator> <conditions>
-<operator>   ::= " and " | " or "
-<condition>  ::= <type> <comperator> <value>
-<type>       ::= "$integer" | "$float" | "$id" | "$date" | "$time" |
-                 "$dateTime" | "$localDateTime" | "$ipv4Address" |
-                 "$ipv6Address" | "$ipv4SocketAddress" |
-                 "$ipv6SocketAddress" | "$semanticVersion"
-<comperator> ::= " == " | " != " | " > " | " >= " | " < " | " <= "
+The supported <operator>s, <comparator>s, and <type>s and how an <expression>
+is constructed using <condition>s is in BNF below.
 
-Note that the expected format of <value> in a <condition> depends on the
-<type> being used.
+<expression>  ::=  <conditions>
+<conditions>  ::=  <condition> | <conditions> <operator> <conditions> |
+                   ( <conditions> )
+<operator>    ::=  and | or
+<condition>   ::=  <type> <comperator> <value>
+<comperator>  ::=  == | != | > | >= | < | <=
+<type>        ::=  $integer | $float | $id | $date | $time | $dateTime |
+                   $localDateTime | $ipv4Address | $ipv6Address |
+                   $ipv4SocketAddress | $ipv6SocketAddress | $semanticVersion
 
-VALUES
-The values for $integer, $float, and $id must conform to the following Rust
-patterns.
-
-Type                 Syntax
------------------------------------------------------------------------------
-$integer             ['+'|'-']? ['0'..='9']+
-$float               ['+'|'-']? ['0'..='9']* ['.']? ['0'..='9']*
-$id                  ['a'..='z'|'A'..='Z'|'0'..='9'|'.'|':'|'_'|'-']+
-
-The values for $date, $time, $dateTime, and $localDateTime must conform to the
-default format strings or the format strings configured on the command line
-and must be valid dates / times.
-
-The values for $ipv4Address, $ipv6Address, $ipv4SocketAddress, and
-$ipv6SocketAddress must be valid IP and socket addresses.
-
-The values for $semanticVersion must be a valid semantic version string.
+The expected format of <value> in a <condition> depends on the <type> being
+used:
+ * $integer must be compared with a valid integer value
+ * $float must be compared with a valid float value (scientific notation,
+   infinity, negative infinity, and not-a-number are not supported)
+ * $id must be compared with a valid id which is a alphanumeric string which
+   may contain cotaining special characters '.:_-'
+ * $date, $time, $dateTime, and $localDateTime must be compared with a value
+   that conforms to the format string
+ * $ipv4Address, $ipv6Address, $ipv4SocketAddress, and $ipv6SocketAddress must
+   be compared with a valid IP or socket address
+ * $semanticVersion must be compared with a string representing a valid
+   semantic version
 
 EXAMPLES
-The following are examples of filter expressions with explanation:
+'$semanticVersion >= 0.2.0'
+   Match all lines containing a semantic version value greater than or equal
+   to 0.2.0
 
-"$date > 2021-01-01"
-    Matches all lines that contain a date (in date format yyyy-mm-dd) after
-    '2021-01-01'
+'$id == qpanda and $time > 21:00:00'
+   Match all lines containing an id value equal to 'qpanda' and a time value
+   greater than 21:00:00
 
-"$semanticVersion >= 0.1.0 and $id == david"
-    Matches all lines that contain a semantic version larger than or equal to
-    '0.1.0' and the id 'david'
 
-"$semanticVersion >= 0.1.0 and ($id == david or $id == sara)"
-    Matches all lines that contain a semantic version larger than or equal to
-    '0.1.0' and the id 'david' or the id 'sara'
 "#;
 
 pub struct Arguments {
@@ -95,11 +88,19 @@ impl Arguments {
             .version(VERSION)
             .about("Filters semi-structured and unstructured text by matching tokens found on each input line against a specified expressions")
             .arg(
+                Arg::with_name(count_argument)
+                    .short("c")
+                    .long("count")
+                    .takes_value(false)
+                    .help("Print processed and matched line count"),
+            )
+            .arg(
                 Arg::with_name(input_argument)
                     .short("i")
                     .long("input-file")
                     .value_name("input-file")
                     .help("Input file to read (stdin if not specified)")
+                    .display_order(1)
                     .next_line_help(true),
             )
             .arg(
@@ -108,26 +109,7 @@ impl Arguments {
                     .long("output-file")
                     .value_name("output-file")
                     .help("Output file to write (stdout if not specified)")
-                    .next_line_help(true),
-            )
-            .arg(
-                Arg::with_name(add_separator_argument)
-                    .short("a")
-                    .long("add-separator")
-                    .multiple(true)
-                    .number_of_values(1)
-                    .possible_values(&[&[WHITESPACES], SEPARATORS].concat())
-                    .help("separator to add to default separators")
-                    .next_line_help(true),
-            )
-            .arg(
-                Arg::with_name(remove_separator_argument)
-                    .short("r")
-                    .long("remove-separator")
-                    .multiple(true)
-                    .number_of_values(1)
-                    .possible_values(&[&[WHITESPACES], SEPARATORS].concat())
-                    .help("separator to remove from default separators")
+                    .display_order(2)
                     .next_line_help(true),
             )
             .arg(
@@ -138,14 +120,31 @@ impl Arguments {
                     .default_value(FILTER_HIGHLIGHT)
                     .possible_values(&[FILTER, HIGHLIGHT, FILTER_HIGHLIGHT])
                     .help("Filter mode")
+                    .display_order(3)
                     .next_line_help(true),
             )
             .arg(
-                Arg::with_name(count_argument)
-                    .short("c")
-                    .long("count")
-                    .takes_value(false)
-                    .help("Print processed and matched line count")
+                Arg::with_name(add_separator_argument)
+                    .short("a")
+                    .long("add-separator")
+                    .multiple(true)
+                    .number_of_values(1)
+                    .possible_values(&[&[WHITESPACES], SEPARATORS].concat())
+                    .help("Separator(s) to add to default separators")
+                    .long_help("Separator(s) to add to default separators ',;| !\"#&()*<=>?@\\^{},' used to split each input line into tokens.\n")
+                    .display_order(4)
+                    .next_line_help(true),
+            )
+            .arg(
+                Arg::with_name(remove_separator_argument)
+                    .short("r")
+                    .long("remove-separator")
+                    .multiple(true)
+                    .number_of_values(1)
+                    .possible_values(&[&[WHITESPACES], SEPARATORS].concat())
+                    .help("Separator(s) to remove from default separators")
+                    .long_help("Separator(s) to remove from default separators ',;| !\"#&()*<=>?@\\^{},' used to split each input line into tokens.\n")
+                    .display_order(5)
                     .next_line_help(true),
             )
             .arg(
@@ -154,7 +153,8 @@ impl Arguments {
                     .value_name("date-format")
                     .default_value(DATE_FORMAT)
                     .validator(Arguments::validate_strftime)
-                    .help("Date format using chrono::format::strftime specifiers (must not include separators)")
+                    .help("$date format using chrono::format::strftime specifiers (must not include separators)")
+                    .display_order(6)
                     .next_line_help(true),
             )
             .arg(
@@ -163,7 +163,8 @@ impl Arguments {
                     .value_name("time-format")
                     .default_value(TIME_FORMAT)
                     .validator(Arguments::validate_strftime)
-                    .help("Time format using chrono::format::strftime specifiers (must not include separators)")
+                    .help("$time format using chrono::format::strftime specifiers (must not include separators)")
+                    .display_order(7)
                     .next_line_help(true),
             )
             .arg(
@@ -172,7 +173,8 @@ impl Arguments {
                     .value_name("date-time-format")
                     .default_value(DATE_TIME_FORMAT)
                     .validator(Arguments::validate_strftime)
-                    .help("DateTime format using chrono::format::strftime specifiers (must not include separators)")
+                    .help("$dateTime format using chrono::format::strftime specifiers (must not include separators)")
+                    .display_order(8)
                     .next_line_help(true),
             )
             .arg(
@@ -181,7 +183,8 @@ impl Arguments {
                     .value_name("local-date-time-format")
                     .default_value(LOCAL_DATE_TIME_FORMAT)
                     .validator(Arguments::validate_strftime)
-                    .help("LocalDateTime format using chrono::format::strftime specifiers (must not include separators)")
+                    .help("$localDateTime format using chrono::format::strftime specifiers (must not include separators)")
+                    .display_order(9)
                     .next_line_help(true),
             )
             .arg(
@@ -190,7 +193,7 @@ impl Arguments {
                     .required(true)
                     .index(1)
                     .next_line_help(true)
-                    .long_help(EXPRESSION_HELP),
+                    .long_help(EXPRESSION_HELP)
             );
 
         let argument_matches = semfilter_command.get_matches();
@@ -243,7 +246,7 @@ impl Arguments {
 
     fn separators<'a>(add_separators: Vec<&'a str>, remove_separators: Vec<&'a str>) -> Vec<&'a str> {
         let mut default_separators = HashSet::from([
-            " ", ",", ";", "|", "!", "\"", "#", "%", "&", "(", ")", "*", "<", "=", ">", "?", "@", "\\", "^", "{", "}",
+            " ", ",", ";", "|", "!", "\"", "#", "&", "(", ")", "*", "<", "=", ">", "?", "@", "\\", "^", "{", "}",
         ]);
         default_separators.extend(add_separators);
         default_separators.retain(|separator| !remove_separators.contains(separator));
