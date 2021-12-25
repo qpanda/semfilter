@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Error};
 use std::collections::HashSet;
-use std::str::Chars;
 
 pub type Position = usize;
 
@@ -43,14 +42,16 @@ impl Separators {
         })
     }
 
-    pub fn comprise_any(&self, characters: Chars) -> bool {
-        for character in characters {
+    pub fn comprise_any(&self, characters: &str) -> String {
+        let mut separators = String::new();
+
+        for character in characters.chars() {
             if self.comprise(character) {
-                return true;
+                separators.push(character);
             }
         }
 
-        return false;
+        return separators;
     }
 
     pub fn comprise(&self, character: char) -> bool {
@@ -149,11 +150,12 @@ mod separators_tests {
     #[test]
     fn comprise_any() {
         // setup
-        let separators = Separators::new(vec![" "]).unwrap();
+        let separators = Separators::new(vec![" ", ","]).unwrap();
 
         // exercise & verify
-        assert!(separators.comprise_any("abc def".chars()));
-        assert!(!separators.comprise_any("abcdef".chars()));
+        assert_eq!(separators.comprise_any("abc def"), " ");
+        assert_eq!(separators.comprise_any("abc,def"), ",");
+        assert_eq!(separators.comprise_any("abcdef"), "");
     }
 }
 

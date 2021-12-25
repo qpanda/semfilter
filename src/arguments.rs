@@ -1,12 +1,13 @@
-use crate::expression::GRAMMER_DELIMITERS;
+use crate::expression::Validator;
 use crate::filter::{Formats, Mode, Settings};
 use crate::filter::{DATE_FORMAT, DATE_TIME_FORMAT, LOCAL_DATE_TIME_FORMAT, TIME_FORMAT};
 use crate::filter::{FILTER, FILTER_HIGHLIGHT, HIGHLIGHT};
 use crate::tokenizer::Separators;
 use crate::tokenizer::{SEPARATORS, WHITESPACES};
-use anyhow::{anyhow, Context, Error};
+use anyhow::{Context, Error};
 use chrono::format::{strftime::StrftimeItems, Item};
 use clap::{App, Arg};
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::{stdin, stdout, Read, Write};
 use std::str::FromStr;
@@ -68,10 +69,6 @@ The following are examples of filter expressions with explanation:
     '0.1.0' and the id 'david' or the id 'sara'
 "#;
 
-pub const DEFAULT_SEPARATORS: &'static [&'static str] = &[
-    " ", ",", ";", "|", "!", "\"", "#", "%", "&", "(", ")", "*", "<", "=", ">", "?", "@", "\\", "^", "{", "}", "~",
-];
-
 pub struct Arguments {
     pub input: Box<dyn Read>,
     pub output: Box<dyn Write>,
@@ -84,18 +81,16 @@ impl Arguments {
     pub fn parse() -> Result<Self, Error> {
         let input_argument = "input";
         let output_argument = "output";
-        let separators_argument = "separators";
+        let add_separator_argument = "add-separator";
+        let remove_separator_argument = "remove-separator";
         let mode_argument = "mode";
         let count_argument = "count";
-        let date_format = "date-format";
-        let time_format = "time-format";
-        let date_time_format = "date-time-format";
-        let local_date_time_format = "local-date-time-format";
+        let date_format_argument = "date-format";
+        let time_format_argument = "time-format";
+        let date_time_format_argument = "date-time-format";
+        let local_date_time_format_argument = "local-date-time-format";
         let expression_argument = "expression";
 
-        let separators_value_delimiter = "I";
-        let separators_possible_values = &[&[WHITESPACES], SEPARATORS].concat();
-        let separators_default_value = DEFAULT_SEPARATORS.join(separators_value_delimiter);
         let semfilter_command = App::new(NAME)
             .version(VERSION)
             .about("Filters semi-structured and unstructured text by matching tokens found on each input line against a specified expressions")
@@ -116,13 +111,23 @@ impl Arguments {
                     .next_line_help(true),
             )
             .arg(
-                Arg::with_name(separators_argument)
-                    .short("s")
-                    .long("separators")
-                    .value_delimiter(separators_value_delimiter)
-                    .default_value(&separators_default_value)
-                    .possible_values(separators_possible_values)
-                    .help("separator(s) used to split input line into tokens")
+                Arg::with_name(add_separator_argument)
+                    .short("a")
+                    .long("add-separator")
+                    .multiple(true)
+                    .number_of_values(1)
+                    .possible_values(&[&[WHITESPACES], SEPARATORS].concat())
+                    .help("separator to add to default separators")
+                    .next_line_help(true),
+            )
+            .arg(
+                Arg::with_name(remove_separator_argument)
+                    .short("r")
+                    .long("remove-separator")
+                    .multiple(true)
+                    .number_of_values(1)
+                    .possible_values(&[&[WHITESPACES], SEPARATORS].concat())
+                    .help("separator to remove from default separators")
                     .next_line_help(true),
             )
             .arg(
@@ -144,7 +149,7 @@ impl Arguments {
                     .next_line_help(true),
             )
             .arg(
-                Arg::with_name(date_format)
+                Arg::with_name(date_format_argument)
                     .long("date-format")
                     .value_name("date-format")
                     .default_value(DATE_FORMAT)
@@ -153,7 +158,7 @@ impl Arguments {
                     .next_line_help(true),
             )
             .arg(
-                Arg::with_name(time_format)
+                Arg::with_name(time_format_argument)
                     .long("time-format")
                     .value_name("time-format")
                     .default_value(TIME_FORMAT)
@@ -162,7 +167,7 @@ impl Arguments {
                     .next_line_help(true),
             )
             .arg(
-                Arg::with_name(date_time_format)
+                Arg::with_name(date_time_format_argument)
                     .long("date-time-format")
                     .value_name("date-time-format")
                     .default_value(DATE_TIME_FORMAT)
@@ -171,7 +176,7 @@ impl Arguments {
                     .next_line_help(true),
             )
             .arg(
-                Arg::with_name(local_date_time_format)
+                Arg::with_name(local_date_time_format_argument)
                     .long("local-date-time-format")
                     .value_name("local-date-time-format")
                     .default_value(LOCAL_DATE_TIME_FORMAT)
@@ -201,39 +206,27 @@ impl Arguments {
                 Box::new(File::open(output_file).context(format!("Failed to open output-file '{}'", output_file))?)
             }
         };
-        let separators = Separators::new(argument_matches.values_of(separators_argument).unwrap().collect())?;
         let mode = Mode::from_str(argument_matches.value_of(mode_argument).unwrap())?;
         let count = argument_matches.is_present(count_argument);
-        let date_format = argument_matches.value_of(date_format).unwrap();
-        let time_format = argument_matches.value_of(time_format).unwrap();
-        let date_time_format = argument_matches.value_of(date_time_format).unwrap();
-        let local_date_time_format = argument_matches.value_of(local_date_time_format).unwrap();
         let expression = String::from(argument_matches.value_of(expression_argument).unwrap());
+        let formats = Formats {
+            date: String::from(argument_matches.value_of(date_format_argument).unwrap()),
+            time: String::from(argument_matches.value_of(time_format_argument).unwrap()),
+            date_time: String::from(argument_matches.value_of(date_time_format_argument).unwrap()),
+            local_date_time: String::from(argument_matches.value_of(local_date_time_format_argument).unwrap()),
+        };
+        let add_separators = match argument_matches.values_of(add_separator_argument) {
+            None => vec![],
+            Some(add_separators) => add_separators.collect(),
+        };
+        let remove_separators = match argument_matches.values_of(remove_separator_argument) {
+            None => vec![],
+            Some(remove_separators) => remove_separators.collect(),
+        };
 
-        if separators.comprise_any(date_format.chars()) {
-            return Err(anyhow!(
-                "Date format string '{}' must not contain separators",
-                date_format
-            ));
-        }
-        if separators.comprise_any(time_format.chars()) {
-            return Err(anyhow!(
-                "Time format string '{}' must not contain separators",
-                date_format
-            ));
-        }
-        if separators.comprise_any(date_time_format.chars()) {
-            return Err(anyhow!(
-                "DateTime format string '{}' must not contain separators",
-                date_time_format
-            ));
-        }
-        if separators.comprise_any(local_date_time_format.chars()) {
-            return Err(anyhow!(
-                "LocalDateTime format string '{}' must not contain separators",
-                local_date_time_format
-            ));
-        }
+        let separators = Separators::new(Arguments::separators(add_separators, remove_separators))?;
+        Validator::validate_formats(&formats).context("Invalid chrono format strings")?;
+        Validator::validate_separators(&expression, &separators, &formats).context("Invalid separators")?;
 
         Ok(Arguments {
             input: input,
@@ -241,28 +234,23 @@ impl Arguments {
             expression: expression,
             separators: separators,
             settings: Settings {
-                formats: Formats {
-                    date: String::from(date_format),
-                    time: String::from(time_format),
-                    date_time: String::from(date_time_format),
-                    local_date_time: String::from(local_date_time_format),
-                },
+                formats: formats,
                 mode: mode,
                 count: count,
             },
         })
     }
 
-    fn validate_strftime(format: String) -> Result<(), String> {
-        for grammar_delimiter in GRAMMER_DELIMITERS {
-            if format.contains(grammar_delimiter) {
-                return Err(format!(
-                    "Format string '{}' must not contain grammar delimiters {}",
-                    format, grammar_delimiter
-                ));
-            }
-        }
+    fn separators<'a>(add_separators: Vec<&'a str>, remove_separators: Vec<&'a str>) -> Vec<&'a str> {
+        let mut default_separators = HashSet::from([
+            " ", ",", ";", "|", "!", "\"", "#", "%", "&", "(", ")", "*", "<", "=", ">", "?", "@", "\\", "^", "{", "}",
+        ]);
+        default_separators.extend(add_separators);
+        default_separators.retain(|separator| !remove_separators.contains(separator));
+        return default_separators.into_iter().collect();
+    }
 
+    fn validate_strftime(format: String) -> Result<(), String> {
         match StrftimeItems::new(&format).position(|i| i == Item::Error) {
             None => Ok(()),
             Some(_) => Err(format!("Format string '{}' invalid", format)),

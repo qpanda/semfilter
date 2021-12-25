@@ -1,5 +1,6 @@
 extern crate peg;
 
+use anyhow::{anyhow, Error};
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
 use semver::Version;
 use std::collections::HashSet;
@@ -11,19 +12,8 @@ use crate::parser::Id;
 use crate::parser::Parser;
 use crate::parser::Term;
 use crate::tokenizer::Position;
+use crate::tokenizer::Separators;
 use crate::tokenizer::Token;
-
-pub const GRAMMER_DELIMITERS: &'static [&'static str] = &["(", ")", " "];
-
-pub const SPECIAL_INTEGER_CHARACTERS: &'static [&'static str] = &["+", "-"];
-pub const SPECIAL_FLOAT_CHARACTERS: &'static [&'static str] = &["+", "-", "."];
-pub const SPECIAL_ID_CHARACTERS: &'static [&'static str] = &["+", "-", ".", ":", "_"];
-pub const SPECIAL_CHRONO_CHARACTERS: &'static [&'static str] = &["/", "-", ".", ":", "+"]; // excluding %c which includes space
-pub const SPECIAL_IPV4ADDRESS_CHARACTERS: &'static [&'static str] = &["."];
-pub const SPECIAL_IPV6ADDRESS_CHARACTERS: &'static [&'static str] = &[":"];
-pub const SPECIAL_IPV4SOCKETADDRESS_CHARACTERS: &'static [&'static str] = &[".", ":"];
-pub const SPECIAL_IPV6SOCKETADDRESS_CHARACTERS: &'static [&'static str] = &[":", "[", "]"];
-pub const SPECIAL_SEMANTICVERSION_CHARACTERS: &'static [&'static str] = &["."];
 
 peg::parser!(pub grammar expression() for str {
     pub rule evaluate(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
@@ -280,6 +270,104 @@ where
         .collect::<HashSet<Position>>()
 }
 
+pub struct Validator {}
+
+impl Validator {
+    pub fn validate_formats(formats: &Formats) -> Result<(), Error> {
+        Validator::validate_format("$date", &formats.date)?;
+        Validator::validate_format("$time", &formats.time)?;
+        Validator::validate_format("$dateTime", &formats.date_time)?;
+        Validator::validate_format("$localDateTime", &formats.local_date_time)?;
+
+        Ok(())
+    }
+
+    fn validate_format(class: &str, format: &str) -> Result<(), Error> {
+        if format.chars().any(|c| c == ' ' || c == '(' || c == ')') {
+            return Err(anyhow!(
+                "'{}' format string '{}' must not contain grammar delimiters ' ' or '(' or ')'",
+                class,
+                format
+            ));
+        }
+
+        if format.contains("%c") || format.contains("%t") || format.contains("%n") {
+            return Err(anyhow!(
+                "'{}' format string '{}' must not contain specifiers '%c', '%t', and '%n'",
+                class,
+                format
+            ));
+        }
+
+        Ok(())
+    }
+
+    pub fn validate_separators(expression: &str, separators: &Separators, formats: &Formats) -> Result<(), Error> {
+        Validator::validate_class_separators(expression, "$integer", separators, "+-")?;
+        Validator::validate_class_separators(expression, "$float", separators, "+-.")?;
+        Validator::validate_class_separators(expression, "$id", separators, "+-.:_")?;
+        Validator::validate_class_separators(expression, "$date", separators, "/-.:+")?;
+        Validator::validate_class_separators(expression, "$time", separators, "/-.:+")?;
+        Validator::validate_class_separators(expression, "$dateTime", separators, "/-.:+")?;
+        Validator::validate_class_separators(expression, "$localDateTime", separators, "/-.:+")?;
+        Validator::validate_class_separators(expression, "$ipv4Address", separators, ".")?;
+        Validator::validate_class_separators(expression, "$ipv6Address", separators, ":")?;
+        Validator::validate_class_separators(expression, "$ipv4SocketAddress", separators, ".:")?;
+        Validator::validate_class_separators(expression, "$ipv6SocketAddress", separators, "[]:")?;
+        Validator::validate_class_separators(expression, "$semanticVersion", separators, ".")?;
+
+        Validator::validate_format_separators(expression, "$date", separators, &formats.date)?;
+        Validator::validate_format_separators(expression, "$time", separators, &formats.time)?;
+        Validator::validate_format_separators(expression, "$dateTime", separators, &formats.date_time)?;
+        Validator::validate_format_separators(expression, "$localDateTime", separators, &formats.local_date_time)?;
+
+        Ok(())
+    }
+
+    fn validate_class_separators(
+        expression: &str,
+        class: &str,
+        separators: &Separators,
+        characters: &str,
+    ) -> Result<(), Error> {
+        if expression.contains(class) {
+            let separator_characters = separators.comprise_any(characters);
+            if separator_characters.chars().count() != 0 {
+                return Err(anyhow!(
+                    "separator(s) '{}' can not be used with an expression containing '{}'",
+                    separator_characters,
+                    class
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn validate_format_separators(
+        expression: &str,
+        class: &str,
+        separators: &Separators,
+        format: &str,
+    ) -> Result<(), Error> {
+        if expression.contains(class) {
+            let raw_format = format.replace("%", "");
+            let separator_characters = separators.comprise_any(&raw_format);
+            if separator_characters.chars().count() != 0 {
+                return Err(anyhow!(
+                    "separator(s) '{}' can not be used in '{}' format string '{}' with an expression containing '{}'",
+                    separator_characters,
+                    class,
+                    format,
+                    class
+                ));
+            }
+        }
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod matches_tests {
     use super::*;
@@ -308,6 +396,46 @@ mod matches_tests {
         assert_eq!(HashSet::from([2, 6]), integers_ne_integer_2);
         assert_eq!(HashSet::from([2, 4, 6]), integers_gt_integer_0);
         assert_eq!(HashSet::from([]), integers_lt_integer_0);
+    }
+}
+
+#[cfg(test)]
+mod validator_tests {
+    use super::*;
+    use crate::filter::test_utils;
+
+    #[test]
+    fn validate_formats() {
+        // setup
+        let valid_formats = test_utils::default_formats();
+        let invalid_formats_chrono_specifier = Formats {
+            date: String::from("%F"),
+            time: String::from("%T"),
+            date_time: String::from("%+"),
+            local_date_time: String::from("%c"),
+        };
+        let invalid_formats_grammar_delimiter = Formats {
+            date: String::from("(%F)"),
+            time: String::from("%T"),
+            date_time: String::from("%+"),
+            local_date_time: String::from("%Y-%m-%dT%H:%M:%S%.f"),
+        };
+
+        // exercise & verify
+        assert!(Validator::validate_formats(&valid_formats).is_ok());
+        assert!(Validator::validate_formats(&invalid_formats_chrono_specifier).is_err());
+        assert!(Validator::validate_formats(&invalid_formats_grammar_delimiter).is_err());
+    }
+
+    #[test]
+    fn validate_separators() {
+        // setup
+        let separators = Separators::new(vec![":"]).unwrap();
+        let formats = test_utils::default_formats();
+
+        // exercise & verify
+        assert!(Validator::validate_separators("$integer == 5", &separators, &formats).is_ok());
+        assert!(Validator::validate_separators("$id == a", &separators, &formats).is_err());
     }
 }
 
