@@ -36,9 +36,9 @@ is constructed using <condition>s is in BNF below.
 <comperator>     ::=  == | != | > | >= | < | <=
 <id-comperator>  ::=  contains | starts-with | ends-with
 <type>           ::=  $integer | $float | $id | $date | $time | $dateTime |
-                      $localDateTime | $ipv4Address | $ipv6Address |
-                      $ipv4SocketAddress | $ipv6SocketAddress |
-                      $semanticVersion
+                      $localDateTime | $ipAddress | $ipv4Address |
+                      $ipv6Address | $ipSocketAddress | $ipv4SocketAddress |
+                      $ipv6SocketAddress | $semanticVersion
 
 The expected format of <value> in a <condition> depends on the <type> being
 used:
@@ -49,8 +49,9 @@ used:
    may contain cotaining special characters '.:_-'
  * $date, $time, $dateTime, and $localDateTime must be compared with a value
    that conforms to the format string
- * $ipv4Address, $ipv6Address, $ipv4SocketAddress, and $ipv6SocketAddress must
-   be compared with a valid IP or socket address
+ * $ipAddress, $ipv4Address, $ipv6Address, $ipSocketAddress,
+   $ipv4SocketAddress, and $ipv6SocketAddress must be compared with a valid IP
+   or socket address
  * $semanticVersion must be compared with a string representing a valid
    semantic version
 

@@ -4,7 +4,7 @@ use anyhow::{anyhow, Error};
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
 use semver::Version;
 use std::collections::HashSet;
-use std::net::{Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
 use crate::filter::Formats;
 use crate::parser::FromWord;
@@ -51,8 +51,10 @@ peg::parser!(pub grammar expression() for str {
         / time_condition(tokens, formats)
         / date_time_condition(tokens, formats)
         / local_date_time_condition(tokens, formats)
+        / ip_address_condition(tokens)
         / ipv4_address_condition(tokens)
         / ipv6_address_condition(tokens)
+        / ip_socket_address_condition(tokens)
         / ipv4_socket_address_condition(tokens)
         / ipv6_socket_address_condition(tokens)
         / semantic_version_condition(tokens)
@@ -119,6 +121,14 @@ peg::parser!(pub grammar expression() for str {
     / local_date_times:local_date_times(tokens, formats) " < " local_date_time:local_date_time(formats) { matches(&local_date_times, |term| term.value < local_date_time) }
     / local_date_times:local_date_times(tokens, formats) " <= " local_date_time:local_date_time(formats) { matches(&local_date_times, |term| term.value <= local_date_time) }
 
+    rule ip_address_condition(tokens: &Vec<Token>) -> HashSet<Position>
+    = ip_addresses:ip_addresses(tokens) " == " ip_address:ip_address() { matches(&ip_addresses, |term| term.value == ip_address) }
+    / ip_addresses:ip_addresses(tokens) " != " ip_address:ip_address() { matches(&ip_addresses, |term| term.value != ip_address) }
+    / ip_addresses:ip_addresses(tokens) " > " ip_address:ip_address() { matches(&ip_addresses, |term| term.value > ip_address) }
+    / ip_addresses:ip_addresses(tokens) " >= " ip_address:ip_address() { matches(&ip_addresses, |term| term.value >= ip_address) }
+    / ip_addresses:ip_addresses(tokens) " < " ip_address:ip_address() { matches(&ip_addresses, |term| term.value < ip_address) }
+    / ip_addresses:ip_addresses(tokens) " <= " ip_address:ip_address() { matches(&ip_addresses, |term| term.value <= ip_address) }
+
     rule ipv4_address_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = ipv4_addresses:ipv4_addresses(tokens) " == " ipv4_address:ipv4_address() { matches(&ipv4_addresses, |term| term.value == ipv4_address) }
     / ipv4_addresses:ipv4_addresses(tokens) " != " ipv4_address:ipv4_address() { matches(&ipv4_addresses, |term| term.value != ipv4_address) }
@@ -134,6 +144,14 @@ peg::parser!(pub grammar expression() for str {
     / ipv6_addresses:ipv6_addresses(tokens) " >= " ipv6_address:ipv6_address() { matches(&ipv6_addresses, |term| term.value >= ipv6_address) }
     / ipv6_addresses:ipv6_addresses(tokens) " < " ipv6_address:ipv6_address() { matches(&ipv6_addresses, |term| term.value < ipv6_address) }
     / ipv6_addresses:ipv6_addresses(tokens) " <= " ipv6_address:ipv6_address() { matches(&ipv6_addresses, |term| term.value <= ipv6_address) }
+
+    rule ip_socket_address_condition(tokens: &Vec<Token>) -> HashSet<Position>
+    = ip_socket_addresses:ip_socket_addresses(tokens) " == " ip_socket_address:ip_socket_address() { matches(&ip_socket_addresses, |term| term.value == ip_socket_address) }
+    / ip_socket_addresses:ip_socket_addresses(tokens) " != " ip_socket_address:ip_socket_address() { matches(&ip_socket_addresses, |term| term.value != ip_socket_address) }
+    / ip_socket_addresses:ip_socket_addresses(tokens) " > " ip_socket_address:ip_socket_address() { matches(&ip_socket_addresses, |term| term.value > ip_socket_address) }
+    / ip_socket_addresses:ip_socket_addresses(tokens) " >= " ip_socket_address:ip_socket_address() { matches(&ip_socket_addresses, |term| term.value >= ip_socket_address) }
+    / ip_socket_addresses:ip_socket_addresses(tokens) " < " ip_socket_address:ip_socket_address() { matches(&ip_socket_addresses, |term| term.value < ip_socket_address) }
+    / ip_socket_addresses:ip_socket_addresses(tokens) " <= " ip_socket_address:ip_socket_address() { matches(&ip_socket_addresses, |term| term.value <= ip_socket_address) }
 
     rule ipv4_socket_address_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = ipv4_socket_addresses:ipv4_socket_addresses(tokens) " == " ipv4_socket_address:ipv4_socket_address() { matches(&ipv4_socket_addresses, |term| term.value == ipv4_socket_address) }
@@ -183,11 +201,17 @@ peg::parser!(pub grammar expression() for str {
     rule local_date_times(tokens: &Vec<Token>, formats: &Formats) -> Vec<Term<NaiveDateTime>>
         = "$localDateTime" { Parser::<NaiveDateTime, String>::from_tokens(tokens, &formats.local_date_time) }
 
+    rule ip_addresses(tokens: &Vec<Token>) -> Vec<Term<IpAddr>>
+        = "$ipAddress" { Parser::<IpAddr, ()>::from_tokens(tokens, &()) }
+
     rule ipv4_addresses(tokens: &Vec<Token>) -> Vec<Term<Ipv4Addr>>
         = "$ipv4Address" { Parser::<Ipv4Addr, ()>::from_tokens(tokens, &()) }
 
     rule ipv6_addresses(tokens: &Vec<Token>) -> Vec<Term<Ipv6Addr>>
         = "$ipv6Address" { Parser::<Ipv6Addr, ()>::from_tokens(tokens, &()) }
+
+    rule ip_socket_addresses(tokens: &Vec<Token>) -> Vec<Term<SocketAddr>>
+        = "$ipSocketAddress" { Parser::<SocketAddr, ()>::from_tokens(tokens, &()) }
 
     rule ipv4_socket_addresses(tokens: &Vec<Token>) -> Vec<Term<SocketAddrV4>>
         = "$ipv4SocketAddress" { Parser::<SocketAddrV4, ()>::from_tokens(tokens, &()) }
@@ -236,6 +260,11 @@ peg::parser!(pub grammar expression() for str {
             NaiveDateTime::from_word(n, &formats.local_date_time).map_err(|_| "failed to parse localDateTime")
         }
 
+    rule ip_address() -> IpAddr
+        = n:$(['0'..='9'|'a'..='f'|'A'..='F'|'.'|':']+) {?
+            IpAddr::from_word(n, &()).map_err(|_| "failed to parse IP address")
+        }
+
     rule ipv4_address() -> Ipv4Addr
         = n:$(['0'..='9'|'.']+) {?
             Ipv4Addr::from_word(n, &()).map_err(|_| "failed to parse IPv4 address")
@@ -244,6 +273,11 @@ peg::parser!(pub grammar expression() for str {
     rule ipv6_address() -> Ipv6Addr
         = n:$(['0'..='9'|'a'..='f'|'A'..='F'|':']+) {?
             Ipv6Addr::from_word(n, &()).map_err(|_| "failed to parse IPv6 address")
+        }
+
+    rule ip_socket_address() -> SocketAddr
+        = n:$(['0'..='9'|'a'..='f'|'A'..='F'|'.'|':'|'['|']']+) {?
+            SocketAddr::from_word(n, &()).map_err(|_| "failed to parse IP socket address")
         }
 
     rule ipv4_socket_address() -> SocketAddrV4
@@ -313,8 +347,10 @@ impl Validator {
         Validator::validate_class_separators(expression, "$time", separators, "/-.:+")?;
         Validator::validate_class_separators(expression, "$dateTime", separators, "/-.:+")?;
         Validator::validate_class_separators(expression, "$localDateTime", separators, "/-.:+")?;
+        Validator::validate_class_separators(expression, "$ipAddress", separators, ".:")?;
         Validator::validate_class_separators(expression, "$ipv4Address", separators, ".")?;
         Validator::validate_class_separators(expression, "$ipv6Address", separators, ":")?;
+        Validator::validate_class_separators(expression, "$ipSocketAddress", separators, ".:[]")?;
         Validator::validate_class_separators(expression, "$ipv4SocketAddress", separators, ".:")?;
         Validator::validate_class_separators(expression, "$ipv6SocketAddress", separators, "[]:")?;
         Validator::validate_class_separators(expression, "$semanticVersion", separators, ".")?;
@@ -776,6 +812,10 @@ mod evaluation_tests {
             Ok(HashSet::from([6]))
         );
         assert_eq!(
+            expression::evaluate("$ipAddress == 8.8.8.8", &tokens, &formats),
+            Ok(HashSet::from([7]))
+        );
+        assert_eq!(
             expression::evaluate("$ipv4Address == 8.8.8.8", &tokens, &formats),
             Ok(HashSet::from([7]))
         );
@@ -786,6 +826,10 @@ mod evaluation_tests {
         assert_eq!(
             expression::evaluate("$ipv4Address > 1.1.1.1", &tokens, &formats),
             Ok(HashSet::from([7]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipAddress == 2001:4860:4860::8888", &tokens, &formats),
+            Ok(HashSet::from([8]))
         );
         assert_eq!(
             expression::evaluate("$ipv6Address == 2001:4860:4860::8888", &tokens, &formats),
@@ -800,6 +844,10 @@ mod evaluation_tests {
             Ok(HashSet::from([8]))
         );
         assert_eq!(
+            expression::evaluate("$ipSocketAddress == 8.8.8.8:53", &tokens, &formats),
+            Ok(HashSet::from([9]))
+        );
+        assert_eq!(
             expression::evaluate("$ipv4SocketAddress == 8.8.8.8:53", &tokens, &formats),
             Ok(HashSet::from([9]))
         );
@@ -810,6 +858,10 @@ mod evaluation_tests {
         assert_eq!(
             expression::evaluate("$ipv4SocketAddress > 1.1.1.1:53", &tokens, &formats),
             Ok(HashSet::from([9]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipSocketAddress == [2001:4860:4860::8888]:53", &tokens, &formats),
+            Ok(HashSet::from([10]))
         );
         assert_eq!(
             expression::evaluate("$ipv6SocketAddress == [2001:4860:4860::8888]:53", &tokens, &formats),
