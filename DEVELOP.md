@@ -13,3 +13,6 @@ Git [rebase is preferred over merge](https://www.atlassian.com/git/tutorials/mer
 
 ## Rust
 **semfilter**  is written in Rust. It uses [cargo](https://doc.rust-lang.org/cargo/index.html) as the build tool and [Rustfmt](https://github.com/rust-lang/rustfmt) to keep the coding sytle consistent.
+
+### Error Handling
+**semfilter** uses [Anyhow](https://crates.io/crates/anyhow) for error handling. All fallible functions return `Result<T, anyhow::Error>` with additional context added when appropriate.
