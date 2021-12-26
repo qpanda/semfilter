@@ -83,6 +83,9 @@ peg::parser!(pub grammar expression() for str {
     / ids:ids(tokens) " >= " id:id() { matches(&ids, |term| term.value >= id) }
     / ids:ids(tokens) " < " id:id() { matches(&ids, |term| term.value < id) }
     / ids:ids(tokens) " <= " id:id() { matches(&ids, |term| term.value <= id) }
+    / ids:ids(tokens) " contains " id:id() { matches(&ids, |term| term.value.contains(&id)) }
+    / ids:ids(tokens) " starts-with " id:id() { matches(&ids, |term| term.value.starts_with(&id)) }
+    / ids:ids(tokens) " ends-with " id:id() { matches(&ids, |term| term.value.ends_with(&id)) }
 
     rule date_condition(tokens: &Vec<Token>, formats: &Formats) -> HashSet<Position>
     = dates:dates(tokens, formats) " == " date:date(formats) { matches(&dates, |term| term.value == date) }
@@ -667,6 +670,11 @@ mod evaluation_tests {
                 separator: false,
                 word: "1.2.3",
             },
+            Token {
+                position: 12,
+                separator: false,
+                word: "qpanda",
+            },
         ];
         let formats = test_utils::default_formats();
 
@@ -700,8 +708,20 @@ mod evaluation_tests {
             Ok(HashSet::from([0]))
         );
         assert_eq!(
+            expression::evaluate("$id contains and", &tokens, &formats),
+            Ok(HashSet::from([12]))
+        );
+        assert_eq!(
+            expression::evaluate("$id starts-with qpa", &tokens, &formats),
+            Ok(HashSet::from([12]))
+        );
+        assert_eq!(
+            expression::evaluate("$id ends-with nda", &tokens, &formats),
+            Ok(HashSet::from([12]))
+        );
+        assert_eq!(
             expression::evaluate("$id != a1", &tokens, &formats),
-            Ok(HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]))
+            Ok(HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]))
         );
         assert_eq!(
             expression::evaluate("$id == b1", &tokens, &formats),

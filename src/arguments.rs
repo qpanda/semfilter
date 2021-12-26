@@ -26,15 +26,19 @@ with <operator>s. In complex expressions parenthesis can be used to group
 The supported <operator>s, <comparator>s, and <type>s and how an <expression>
 is constructed using <condition>s is in BNF below.
 
-<expression>  ::=  <conditions>
-<conditions>  ::=  <condition> | <conditions> <operator> <conditions> |
-                   ( <conditions> )
-<operator>    ::=  and | or
-<condition>   ::=  <type> <comperator> <value>
-<comperator>  ::=  == | != | > | >= | < | <=
-<type>        ::=  $integer | $float | $id | $date | $time | $dateTime |
-                   $localDateTime | $ipv4Address | $ipv6Address |
-                   $ipv4SocketAddress | $ipv6SocketAddress | $semanticVersion
+<expression>     ::=  <conditions>
+<conditions>     ::=  <condition> |
+                      <conditions> <operator> <conditions> |
+                      ( <conditions> )
+<operator>       ::=  and | or
+<condition>      ::=  <type> <comperator> <value> |
+                      $id <id-comperator> <id>
+<comperator>     ::=  == | != | > | >= | < | <=
+<id-comperator>  ::=  contains | starts-with | ends-with
+<type>           ::=  $integer | $float | $id | $date | $time | $dateTime |
+                      $localDateTime | $ipv4Address | $ipv6Address |
+                      $ipv4SocketAddress | $ipv6SocketAddress |
+                      $semanticVersion
 
 The expected format of <value> in a <condition> depends on the <type> being
 used:
