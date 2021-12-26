@@ -131,7 +131,7 @@ impl Arguments {
                     .number_of_values(1)
                     .possible_values(&[&[WHITESPACES], SEPARATORS].concat())
                     .help("Separator(s) to add to default separators")
-                    .long_help("Separator(s) to add to default separators ',;| !\"#&()*<=>?@\\^{},' used to split each input line into tokens.\n")
+                    .long_help("Separator(s) to add to default separators [:space:],;|'\"()<=>{} used to split each input line into tokens.\n")
                     .display_order(4)
                     .next_line_help(true),
             )
@@ -143,7 +143,7 @@ impl Arguments {
                     .number_of_values(1)
                     .possible_values(&[&[WHITESPACES], SEPARATORS].concat())
                     .help("Separator(s) to remove from default separators")
-                    .long_help("Separator(s) to remove from default separators ',;| !\"#&()*<=>?@\\^{},' used to split each input line into tokens.\n")
+                    .long_help("Separator(s) to remove from default separators [:space:],;|'\"()<=>{} used to split each input line into tokens.\n")
                     .display_order(5)
                     .next_line_help(true),
             )
@@ -245,12 +245,10 @@ impl Arguments {
     }
 
     fn separators<'a>(add_separators: Vec<&'a str>, remove_separators: Vec<&'a str>) -> Vec<&'a str> {
-        let mut default_separators = HashSet::from([
-            " ", ",", ";", "|", "!", "\"", "#", "&", "(", ")", "*", "<", "=", ">", "?", "@", "\\", "^", "{", "}",
-        ]);
-        default_separators.extend(add_separators);
-        default_separators.retain(|separator| !remove_separators.contains(separator));
-        return default_separators.into_iter().collect();
+        let mut separators = HashSet::from(["[:space:]", ",", ";", "|", "'", "\"", "(", ")", "<", "=", ">", "{", "}"]);
+        separators.extend(add_separators);
+        separators.retain(|separator| !remove_separators.contains(separator));
+        return separators.into_iter().collect();
     }
 
     fn validate_strftime(format: String) -> Result<(), String> {
