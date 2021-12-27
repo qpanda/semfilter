@@ -698,139 +698,115 @@ mod evaluation_tests {
     }
 
     #[test]
-    fn evaluate_simple_expression() {
+    fn evaluate_integer_expression() {
         // setup
-        let tokens = vec![
-            Token {
-                position: 0,
-                separator: false,
-                word: "a1",
-            },
-            Token {
-                position: 1,
-                separator: false,
-                word: "9",
-            },
-            Token {
-                position: 2,
-                separator: false,
-                word: "5.5",
-            },
-            Token {
-                position: 3,
-                separator: false,
-                word: "2021-01-01",
-            },
-            Token {
-                position: 4,
-                separator: false,
-                word: "15:15:15",
-            },
-            Token {
-                position: 5,
-                separator: false,
-                word: "2001-07-08T00:34:60.026490+09:30",
-            },
-            Token {
-                position: 6,
-                separator: false,
-                word: "2001-07-08T00:34:60.026490",
-            },
-            Token {
-                position: 7,
-                separator: false,
-                word: "8.8.8.8",
-            },
-            Token {
-                position: 8,
-                separator: false,
-                word: "2001:4860:4860::8888",
-            },
-            Token {
-                position: 9,
-                separator: false,
-                word: "8.8.8.8:53",
-            },
-            Token {
-                position: 10,
-                separator: false,
-                word: "[2001:4860:4860::8888]:53",
-            },
-            Token {
-                position: 11,
-                separator: false,
-                word: "1.2.3",
-            },
-            Token {
-                position: 12,
-                separator: false,
-                word: "qpanda",
-            },
-            Token {
-                position: 13,
-                separator: false,
-                word: "10.1.1.0/24",
-            },
-            Token {
-                position: 14,
-                separator: false,
-                word: "fd00::/32",
-            },
-        ];
+        let tokens = vec![Token {
+            position: 0,
+            separator: false,
+            word: "9",
+        }];
+
         let formats = test_utils::default_formats();
 
         // exercise & verify
         assert_eq!(
             expression::evaluate("$integer == 9", &tokens, &formats),
-            Ok(HashSet::from([1]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$integer != 9", &tokens, &formats),
             Ok(HashSet::from([]))
         );
+    }
+
+    #[test]
+    fn evaluate_float_expression() {
+        // setup
+        let tokens = vec![Token {
+            position: 0,
+            separator: false,
+            word: "5.5",
+        }];
+
+        let formats = test_utils::default_formats();
+
+        // exercise & verify
         assert_eq!(
             expression::evaluate("$float == 5.5", &tokens, &formats),
-            Ok(HashSet::from([2]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$float != 5.5", &tokens, &formats),
-            Ok(HashSet::from([1]))
-        );
-        assert_eq!(
-            expression::evaluate("$float > 0.0", &tokens, &formats),
-            Ok(HashSet::from([1, 2]))
-        );
-        assert_eq!(
-            expression::evaluate("$float < 0.0", &tokens, &formats),
             Ok(HashSet::from([]))
         );
+    }
+
+    #[test]
+    fn evaluate_id_expression() {
+        // setup
+        let tokens = vec![Token {
+            position: 0,
+            separator: false,
+            word: "qpanda",
+        }];
+
+        let formats = test_utils::default_formats();
+
+        // exercise & verify
         assert_eq!(
-            expression::evaluate("$id == a1", &tokens, &formats),
+            expression::evaluate("$id == qpanda", &tokens, &formats),
             Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$id contains and", &tokens, &formats),
-            Ok(HashSet::from([12]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$id starts-with qpa", &tokens, &formats),
-            Ok(HashSet::from([12]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$id ends-with nda", &tokens, &formats),
-            Ok(HashSet::from([12]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
-            expression::evaluate("$id != a1", &tokens, &formats),
-            Ok(HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]))
-        );
-        assert_eq!(
-            expression::evaluate("$id == b1", &tokens, &formats),
+            expression::evaluate("$id != qpanda", &tokens, &formats),
             Ok(HashSet::from([]))
         );
+    }
+
+    #[test]
+    fn evaluate_date_time_expression() {
+        // setup
+        let tokens = vec![
+            Token {
+                position: 0,
+                separator: false,
+                word: "2021-01-01",
+            },
+            Token {
+                position: 1,
+                separator: false,
+                word: "15:15:15",
+            },
+            Token {
+                position: 2,
+                separator: false,
+                word: "2001-07-08T00:34:60.026490+09:30",
+            },
+            Token {
+                position: 3,
+                separator: false,
+                word: "2001-07-08T00:34:60.026490",
+            },
+        ];
+
+        let formats = test_utils::default_formats();
+
+        // exercise & verify
         assert_eq!(
             expression::evaluate("$date == 2021-01-01", &tokens, &formats),
-            Ok(HashSet::from([3]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$date != 2021-01-01", &tokens, &formats),
@@ -838,11 +814,11 @@ mod evaluation_tests {
         );
         assert_eq!(
             expression::evaluate("$date > 2000-01-01", &tokens, &formats),
-            Ok(HashSet::from([3]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$time == 15:15:15", &tokens, &formats),
-            Ok(HashSet::from([4]))
+            Ok(HashSet::from([1]))
         );
         assert_eq!(
             expression::evaluate("$time != 15:15:15", &tokens, &formats),
@@ -850,11 +826,11 @@ mod evaluation_tests {
         );
         assert_eq!(
             expression::evaluate("$time > 13:00:00", &tokens, &formats),
-            Ok(HashSet::from([4]))
+            Ok(HashSet::from([1]))
         );
         assert_eq!(
             expression::evaluate("$dateTime == 2001-07-08T00:34:60.026490+09:30", &tokens, &formats),
-            Ok(HashSet::from([5]))
+            Ok(HashSet::from([2]))
         );
         assert_eq!(
             expression::evaluate("$dateTime != 2001-07-08T00:34:60.026490+09:30", &tokens, &formats),
@@ -862,11 +838,11 @@ mod evaluation_tests {
         );
         assert_eq!(
             expression::evaluate("$dateTime > 2001-07-08T00:00:00.000000+09:30", &tokens, &formats),
-            Ok(HashSet::from([5]))
+            Ok(HashSet::from([2]))
         );
         assert_eq!(
             expression::evaluate("$localDateTime == 2001-07-08T00:34:60.026490", &tokens, &formats),
-            Ok(HashSet::from([6]))
+            Ok(HashSet::from([3]))
         );
         assert_eq!(
             expression::evaluate("$localDateTime != 2001-07-08T00:34:60.026490", &tokens, &formats),
@@ -874,15 +850,48 @@ mod evaluation_tests {
         );
         assert_eq!(
             expression::evaluate("$localDateTime > 2001-07-08T00:00:00.000000", &tokens, &formats),
-            Ok(HashSet::from([6]))
+            Ok(HashSet::from([3]))
         );
+    }
+
+    #[test]
+    fn evaluate_ip_address_expression() {
+        // setup
+        let tokens = vec![
+            Token {
+                position: 0,
+                separator: false,
+                word: "8.8.8.8",
+            },
+            Token {
+                position: 1,
+                separator: false,
+                word: "2001:4860:4860::8888",
+            },
+        ];
+
+        let formats = test_utils::default_formats();
+
+        // exercise & verify
         assert_eq!(
             expression::evaluate("$ipAddress == 8.8.8.8", &tokens, &formats),
-            Ok(HashSet::from([7]))
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipAddress == 2001:4860:4860::8888", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipAddress != 8.8.8.8", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipAddress != 2001:4860:4860::8888", &tokens, &formats),
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$ipv4Address == 8.8.8.8", &tokens, &formats),
-            Ok(HashSet::from([7]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$ipv4Address != 8.8.8.8", &tokens, &formats),
@@ -890,15 +899,11 @@ mod evaluation_tests {
         );
         assert_eq!(
             expression::evaluate("$ipv4Address > 1.1.1.1", &tokens, &formats),
-            Ok(HashSet::from([7]))
-        );
-        assert_eq!(
-            expression::evaluate("$ipAddress == 2001:4860:4860::8888", &tokens, &formats),
-            Ok(HashSet::from([8]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$ipv6Address == 2001:4860:4860::8888", &tokens, &formats),
-            Ok(HashSet::from([8]))
+            Ok(HashSet::from([1]))
         );
         assert_eq!(
             expression::evaluate("$ipv6Address != 2001:4860:4860::8888", &tokens, &formats),
@@ -906,15 +911,48 @@ mod evaluation_tests {
         );
         assert_eq!(
             expression::evaluate("$ipv6Address > 2001:4860:4860::8844", &tokens, &formats),
-            Ok(HashSet::from([8]))
+            Ok(HashSet::from([1]))
         );
+    }
+
+    #[test]
+    fn evaluate_ip_socket_address_expression() {
+        // setup
+        let tokens = vec![
+            Token {
+                position: 0,
+                separator: false,
+                word: "8.8.8.8:53",
+            },
+            Token {
+                position: 1,
+                separator: false,
+                word: "[2001:4860:4860::8888]:53",
+            },
+        ];
+
+        let formats = test_utils::default_formats();
+
+        // exercise & verify
         assert_eq!(
             expression::evaluate("$ipSocketAddress == 8.8.8.8:53", &tokens, &formats),
-            Ok(HashSet::from([9]))
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipSocketAddress == [2001:4860:4860::8888]:53", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipSocketAddress != 8.8.8.8:53", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipSocketAddress != [2001:4860:4860::8888]:53", &tokens, &formats),
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$ipv4SocketAddress == 8.8.8.8:53", &tokens, &formats),
-            Ok(HashSet::from([9]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$ipv4SocketAddress != 8.8.8.8:53", &tokens, &formats),
@@ -922,15 +960,11 @@ mod evaluation_tests {
         );
         assert_eq!(
             expression::evaluate("$ipv4SocketAddress > 1.1.1.1:53", &tokens, &formats),
-            Ok(HashSet::from([9]))
-        );
-        assert_eq!(
-            expression::evaluate("$ipSocketAddress == [2001:4860:4860::8888]:53", &tokens, &formats),
-            Ok(HashSet::from([10]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$ipv6SocketAddress == [2001:4860:4860::8888]:53", &tokens, &formats),
-            Ok(HashSet::from([10]))
+            Ok(HashSet::from([1]))
         );
         assert_eq!(
             expression::evaluate("$ipv6SocketAddress != [2001:4860:4860::8888]:53", &tokens, &formats),
@@ -938,19 +972,48 @@ mod evaluation_tests {
         );
         assert_eq!(
             expression::evaluate("$ipv6SocketAddress > [2001:4860:4860::8844]:53", &tokens, &formats),
-            Ok(HashSet::from([10]))
+            Ok(HashSet::from([1]))
         );
+    }
+
+    #[test]
+    fn evaluate_ip_network_expression() {
+        // setup
+        let tokens = vec![
+            Token {
+                position: 0,
+                separator: false,
+                word: "10.1.1.0/24",
+            },
+            Token {
+                position: 1,
+                separator: false,
+                word: "fd00::/32",
+            },
+        ];
+
+        let formats = test_utils::default_formats();
+
+        // exercise & verify
         assert_eq!(
             expression::evaluate("$ipNetwork == 10.1.1.0/24", &tokens, &formats),
-            Ok(HashSet::from([13]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$ipNetwork != 10.1.1.0/24", &tokens, &formats),
-            Ok(HashSet::from([14]))
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipNetwork == fd00::/32", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipNetwork != fd00::/32", &tokens, &formats),
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$ipv4Network == 10.1.1.0/24", &tokens, &formats),
-            Ok(HashSet::from([13]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$ipv4Network != 10.1.1.0/24", &tokens, &formats),
@@ -958,12 +1021,26 @@ mod evaluation_tests {
         );
         assert_eq!(
             expression::evaluate("$ipv6Network == fd00::/32", &tokens, &formats),
-            Ok(HashSet::from([14]))
+            Ok(HashSet::from([1]))
         );
         assert_eq!(
             expression::evaluate("$ipv6Network != fd00::/32", &tokens, &formats),
             Ok(HashSet::from([]))
         );
+    }
+
+    #[test]
+    fn evaluate_semantic_version_expression() {
+        // setup
+        let tokens = vec![Token {
+            position: 11,
+            separator: false,
+            word: "1.2.3",
+        }];
+
+        let formats = test_utils::default_formats();
+
+        // exercise & verify
         assert_eq!(
             expression::evaluate("$semanticVersion == 1.2.3", &tokens, &formats),
             Ok(HashSet::from([11]))
