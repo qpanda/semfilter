@@ -236,7 +236,7 @@ peg::parser!(pub grammar expression() for str {
         }
 
     rule id() -> Id
-        = n:$(['a'..='z'|'A'..='Z'|'0'..='9'|'+'|'-'|'.'|':'|'_']+) {?
+        = n:$(['a'..='z'|'A'..='Z']+ ['a'..='z'|'A'..='Z'|'0'..='9'|'+'|'-'|'.'|':'|'_']*) {?
             Id::from_word(n, &()).map_err(|_| "failed to parse id")
         }
 
