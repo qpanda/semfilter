@@ -328,7 +328,7 @@ impl Validator {
             ));
         }
 
-        if format.contains("%c") || format.contains("%t") || format.contains("%n") {
+        if format.contains("%c") || format.contains("%t") || format.contains("%n") || format.contains("%%") {
             return Err(anyhow!(
                 "'{}' format string '{}' must not contain specifiers '%c', '%t', and '%n'",
                 class,
