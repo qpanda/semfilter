@@ -38,7 +38,8 @@ is constructed using <condition>s is in BNF below.
 <type>           ::=  $integer | $float | $id | $date | $time | $dateTime |
                       $localDateTime | $ipAddress | $ipv4Address |
                       $ipv6Address | $ipSocketAddress | $ipv4SocketAddress |
-                      $ipv6SocketAddress | $semanticVersion
+                      $ipv6SocketAddress | $ipNetwork | $ipv4Network |
+                      $ipv6Network | $semanticVersion
 
 The expected format of <value> in a <condition> depends on the <type> being
 used:
@@ -50,8 +51,8 @@ used:
  * $date, $time, $dateTime, and $localDateTime must be compared with a value
    that conforms to the format string
  * $ipAddress, $ipv4Address, $ipv6Address, $ipSocketAddress,
-   $ipv4SocketAddress, and $ipv6SocketAddress must be compared with a valid IP
-   or socket address
+   $ipv4SocketAddress, $ipv6SocketAddress, $ipNetwork, $ipv4Network,
+   $ipv6Network must be compared with a valid IP or socket address
  * $semanticVersion must be compared with a string representing a valid
    semantic version
 

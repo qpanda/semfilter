@@ -2,6 +2,7 @@ extern crate peg;
 
 use anyhow::{anyhow, Error};
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
+use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 use semver::Version;
 use std::collections::HashSet;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
@@ -58,6 +59,9 @@ peg::parser!(pub grammar expression() for str {
         / ipv4_socket_address_condition(tokens)
         / ipv6_socket_address_condition(tokens)
         / semantic_version_condition(tokens)
+        / ip_network_condition(tokens)
+        / ipv4_network_condition(tokens)
+        / ipv6_network_condition(tokens)
 
     //
     // conditions
@@ -169,6 +173,30 @@ peg::parser!(pub grammar expression() for str {
     / ipv6_socket_addresses:ipv6_socket_addresses(tokens) " < " ipv6_socket_address:ipv6_socket_address() { matches(&ipv6_socket_addresses, |term| term.value < ipv6_socket_address) }
     / ipv6_socket_addresses:ipv6_socket_addresses(tokens) " <= " ipv6_socket_address:ipv6_socket_address() { matches(&ipv6_socket_addresses, |term| term.value <= ipv6_socket_address) }
 
+    rule ip_network_condition(tokens: &Vec<Token>) -> HashSet<Position>
+    = ip_networks:ip_networks(tokens) " == " ip_network:ip_network() { matches(&ip_networks, |term| term.value == ip_network) }
+    / ip_networks:ip_networks(tokens) " != " ip_network:ip_network() { matches(&ip_networks, |term| term.value != ip_network) }
+    / ip_networks:ip_networks(tokens) " > " ip_network:ip_network() { matches(&ip_networks, |term| term.value > ip_network) }
+    / ip_networks:ip_networks(tokens) " >= " ip_network:ip_network() { matches(&ip_networks, |term| term.value >= ip_network) }
+    / ip_networks:ip_networks(tokens) " < " ip_network:ip_network() { matches(&ip_networks, |term| term.value < ip_network) }
+    / ip_networks:ip_networks(tokens) " <= " ip_network:ip_network() { matches(&ip_networks, |term| term.value <= ip_network) }
+
+    rule ipv4_network_condition(tokens: &Vec<Token>) -> HashSet<Position>
+    = ipv4_networks:ipv4_networks(tokens) " == " ipv4_network:ipv4_network() { matches(&ipv4_networks, |term| term.value == ipv4_network) }
+    / ipv4_networks:ipv4_networks(tokens) " != " ipv4_network:ipv4_network() { matches(&ipv4_networks, |term| term.value != ipv4_network) }
+    / ipv4_networks:ipv4_networks(tokens) " > " ipv4_network:ipv4_network() { matches(&ipv4_networks, |term| term.value > ipv4_network) }
+    / ipv4_networks:ipv4_networks(tokens) " >= " ipv4_network:ipv4_network() { matches(&ipv4_networks, |term| term.value >= ipv4_network) }
+    / ipv4_networks:ipv4_networks(tokens) " < " ipv4_network:ipv4_network() { matches(&ipv4_networks, |term| term.value < ipv4_network) }
+    / ipv4_networks:ipv4_networks(tokens) " <= " ipv4_network:ipv4_network() { matches(&ipv4_networks, |term| term.value <= ipv4_network) }
+
+    rule ipv6_network_condition(tokens: &Vec<Token>) -> HashSet<Position>
+    = ipv6_networks:ipv6_networks(tokens) " == " ipv6_network:ipv6_network() { matches(&ipv6_networks, |term| term.value == ipv6_network) }
+    / ipv6_networks:ipv6_networks(tokens) " != " ipv6_network:ipv6_network() { matches(&ipv6_networks, |term| term.value != ipv6_network) }
+    / ipv6_networks:ipv6_networks(tokens) " > " ipv6_network:ipv6_network() { matches(&ipv6_networks, |term| term.value > ipv6_network) }
+    / ipv6_networks:ipv6_networks(tokens) " >= " ipv6_network:ipv6_network() { matches(&ipv6_networks, |term| term.value >= ipv6_network) }
+    / ipv6_networks:ipv6_networks(tokens) " < " ipv6_network:ipv6_network() { matches(&ipv6_networks, |term| term.value < ipv6_network) }
+    / ipv6_networks:ipv6_networks(tokens) " <= " ipv6_network:ipv6_network() { matches(&ipv6_networks, |term| term.value <= ipv6_network) }
+
     rule semantic_version_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = semantic_versions:semantic_versions(tokens) " == " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value == semantic_version) }
     / semantic_versions:semantic_versions(tokens) " != " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value != semantic_version) }
@@ -218,6 +246,15 @@ peg::parser!(pub grammar expression() for str {
 
     rule ipv6_socket_addresses(tokens: &Vec<Token>) -> Vec<Term<SocketAddrV6>>
         = "$ipv6SocketAddress" { Parser::<SocketAddrV6, ()>::from_tokens(tokens, &()) }
+
+    rule ip_networks(tokens: &Vec<Token>) -> Vec<Term<IpNet>>
+        = "$ipNetwork" { Parser::<IpNet, ()>::from_tokens(tokens, &()) }
+
+    rule ipv4_networks(tokens: &Vec<Token>) -> Vec<Term<Ipv4Net>>
+        = "$ipv4Network" { Parser::<Ipv4Net, ()>::from_tokens(tokens, &()) }
+
+    rule ipv6_networks(tokens: &Vec<Token>) -> Vec<Term<Ipv6Net>>
+        = "$ipv6Network" { Parser::<Ipv6Net, ()>::from_tokens(tokens, &()) }
 
     rule semantic_versions(tokens: &Vec<Token>) -> Vec<Term<Version>>
         = "$semanticVersion" { Parser::<Version, ()>::from_tokens(tokens, &()) }
@@ -290,6 +327,21 @@ peg::parser!(pub grammar expression() for str {
             SocketAddrV6::from_word(n, &()).map_err(|_| "failed to parse IPv6 socket address")
         }
 
+    rule ip_network() -> IpNet
+        = n:$(['0'..='9'|'a'..='f'|'A'..='F'|'.'|':'|'/']+) {?
+            IpNet::from_word(n, &()).map_err(|_| "failed to parse IP network")
+        }
+
+    rule ipv4_network() -> Ipv4Net
+        = n:$(['0'..='9'|'.'|'/']+) {?
+            Ipv4Net::from_word(n, &()).map_err(|_| "failed to parse IPv4 network")
+        }
+
+    rule ipv6_network() -> Ipv6Net
+        = n:$(['0'..='9'|'a'..='f'|'A'..='F'|':'|'/']+) {?
+            Ipv6Net::from_word(n, &()).map_err(|_| "failed to parse IPv6 network")
+        }
+
     rule semantic_version() -> Version
         = n:$(['0'..='9'|'.']+) {?
             Version::from_word(n, &()).map_err(|_| "failed to parse semantic version")
@@ -353,6 +405,9 @@ impl Validator {
         Validator::validate_class_separators(expression, "$ipSocketAddress", separators, ".:[]")?;
         Validator::validate_class_separators(expression, "$ipv4SocketAddress", separators, ".:")?;
         Validator::validate_class_separators(expression, "$ipv6SocketAddress", separators, "[]:")?;
+        Validator::validate_class_separators(expression, "$ipNetwork", separators, ".:/")?;
+        Validator::validate_class_separators(expression, "$ipv4Network", separators, "./")?;
+        Validator::validate_class_separators(expression, "$ipv6Network", separators, ":/")?;
         Validator::validate_class_separators(expression, "$semanticVersion", separators, ".")?;
 
         Validator::validate_format_separators(expression, "$date", separators, &formats.date)?;
@@ -711,6 +766,16 @@ mod evaluation_tests {
                 separator: false,
                 word: "qpanda",
             },
+            Token {
+                position: 13,
+                separator: false,
+                word: "10.1.1.0/24",
+            },
+            Token {
+                position: 14,
+                separator: false,
+                word: "fd00::/32",
+            },
         ];
         let formats = test_utils::default_formats();
 
@@ -757,7 +822,7 @@ mod evaluation_tests {
         );
         assert_eq!(
             expression::evaluate("$id != a1", &tokens, &formats),
-            Ok(HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]))
+            Ok(HashSet::from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]))
         );
         assert_eq!(
             expression::evaluate("$id == b1", &tokens, &formats),
@@ -874,6 +939,30 @@ mod evaluation_tests {
         assert_eq!(
             expression::evaluate("$ipv6SocketAddress > [2001:4860:4860::8844]:53", &tokens, &formats),
             Ok(HashSet::from([10]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipNetwork == 10.1.1.0/24", &tokens, &formats),
+            Ok(HashSet::from([13]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipNetwork != 10.1.1.0/24", &tokens, &formats),
+            Ok(HashSet::from([14]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipv4Network == 10.1.1.0/24", &tokens, &formats),
+            Ok(HashSet::from([13]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipv4Network != 10.1.1.0/24", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipv6Network == fd00::/32", &tokens, &formats),
+            Ok(HashSet::from([14]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipv6Network != fd00::/32", &tokens, &formats),
+            Ok(HashSet::from([]))
         );
         assert_eq!(
             expression::evaluate("$semanticVersion == 1.2.3", &tokens, &formats),

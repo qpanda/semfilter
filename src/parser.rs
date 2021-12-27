@@ -1,5 +1,6 @@
 use anyhow::Error;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
+use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 use semver::Version;
 use std::marker::PhantomData;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
@@ -88,6 +89,24 @@ impl FromWord<()> for SocketAddrV4 {
 impl FromWord<()> for SocketAddrV6 {
     fn from_word(word: &str, _: &()) -> Result<Self, Error> {
         word.parse::<SocketAddrV6>().map_err(|e| e.into())
+    }
+}
+
+impl FromWord<()> for IpNet {
+    fn from_word(word: &str, _: &()) -> Result<Self, Error> {
+        word.parse::<IpNet>().map_err(|e| e.into())
+    }
+}
+
+impl FromWord<()> for Ipv4Net {
+    fn from_word(word: &str, _: &()) -> Result<Self, Error> {
+        word.parse::<Ipv4Net>().map_err(|e| e.into())
+    }
+}
+
+impl FromWord<()> for Ipv6Net {
+    fn from_word(word: &str, _: &()) -> Result<Self, Error> {
+        word.parse::<Ipv6Net>().map_err(|e| e.into())
     }
 }
 
@@ -353,6 +372,61 @@ mod value_tests {
 
         // verify
         assert_eq!(address, ok.unwrap());
+        assert_eq!(true, err_1.is_err());
+        assert_eq!(true, err_2.is_err());
+    }
+
+    #[test]
+    fn new_ip_net() {
+        // setup
+        let ipv4_net = "10.1.1.0/24".parse::<IpNet>().unwrap();
+        let ipv6_net = "fd00::/32".parse::<IpNet>().unwrap();
+
+        // exercise
+        let ipv4_ok = IpNet::from_word(&ipv4_net.to_string(), &());
+        let ipv4_err_1 = IpNet::from_word("10.1.1.0/88", &());
+        let ipv4_err_2 = IpNet::from_word("word", &());
+        let ipv6_ok = IpNet::from_word(&ipv6_net.to_string(), &());
+        let ipv6_err_1 = IpNet::from_word("fg00::/32", &());
+        let ipv6_err_2 = IpNet::from_word("word", &());
+
+        // verify
+        assert_eq!(ipv4_net, ipv4_ok.unwrap());
+        assert_eq!(true, ipv4_err_1.is_err());
+        assert_eq!(true, ipv4_err_2.is_err());
+        assert_eq!(ipv6_net, ipv6_ok.unwrap());
+        assert_eq!(true, ipv6_err_1.is_err());
+        assert_eq!(true, ipv6_err_2.is_err());
+    }
+
+    #[test]
+    fn new_ipv4_net() {
+        // setup
+        let net = "10.1.1.0/24".parse::<Ipv4Net>().unwrap();
+
+        // exercise
+        let ok = Ipv4Net::from_word(&net.to_string(), &());
+        let err_1 = Ipv4Net::from_word("10.1.1.0/88", &());
+        let err_2 = Ipv4Net::from_word("word", &());
+
+        // verify
+        assert_eq!(net, ok.unwrap());
+        assert_eq!(true, err_1.is_err());
+        assert_eq!(true, err_2.is_err());
+    }
+
+    #[test]
+    fn new_ipv6_net() {
+        // setup
+        let net = "fd00::/32".parse::<Ipv6Net>().unwrap();
+
+        // exercise
+        let ok = Ipv6Net::from_word(&net.to_string(), &());
+        let err_1 = Ipv6Net::from_word("fg00::/32", &());
+        let err_2 = Ipv6Net::from_word("word", &());
+
+        // verify
+        assert_eq!(net, ok.unwrap());
         assert_eq!(true, err_1.is_err());
         assert_eq!(true, err_2.is_err());
     }
