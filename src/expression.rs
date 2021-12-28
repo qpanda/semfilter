@@ -132,6 +132,8 @@ peg::parser!(pub grammar expression() for str {
     / ip_addresses:ip_addresses(tokens) " >= " ip_address:ip_address() { matches(&ip_addresses, |term| term.value >= ip_address) }
     / ip_addresses:ip_addresses(tokens) " < " ip_address:ip_address() { matches(&ip_addresses, |term| term.value < ip_address) }
     / ip_addresses:ip_addresses(tokens) " <= " ip_address:ip_address() { matches(&ip_addresses, |term| term.value <= ip_address) }
+    / ip_addresses:ip_addresses(tokens) " in " ip_network:ip_network() { matches(&ip_addresses, |term| ip_network.contains(&term.value)) }
+    / ip_addresses:ip_addresses(tokens) " not in " ip_network:ip_network() { matches(&ip_addresses, |term| !ip_network.contains(&term.value)) }
 
     rule ipv4_address_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = ipv4_addresses:ipv4_addresses(tokens) " == " ipv4_address:ipv4_address() { matches(&ipv4_addresses, |term| term.value == ipv4_address) }
@@ -140,6 +142,8 @@ peg::parser!(pub grammar expression() for str {
     / ipv4_addresses:ipv4_addresses(tokens) " >= " ipv4_address:ipv4_address() { matches(&ipv4_addresses, |term| term.value >= ipv4_address) }
     / ipv4_addresses:ipv4_addresses(tokens) " < " ipv4_address:ipv4_address() { matches(&ipv4_addresses, |term| term.value < ipv4_address) }
     / ipv4_addresses:ipv4_addresses(tokens) " <= " ipv4_address:ipv4_address() { matches(&ipv4_addresses, |term| term.value <= ipv4_address) }
+    / ipv4_addresses:ipv4_addresses(tokens) " in " ipv4_network:ipv4_network() { matches(&ipv4_addresses, |term| ipv4_network.contains(&term.value)) }
+    / ipv4_addresses:ipv4_addresses(tokens) " not in " ipv4_network:ipv4_network() { matches(&ipv4_addresses, |term| !ipv4_network.contains(&term.value)) }
 
     rule ipv6_address_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = ipv6_addresses:ipv6_addresses(tokens) " == " ipv6_address:ipv6_address() { matches(&ipv6_addresses, |term| term.value == ipv6_address) }
@@ -148,6 +152,8 @@ peg::parser!(pub grammar expression() for str {
     / ipv6_addresses:ipv6_addresses(tokens) " >= " ipv6_address:ipv6_address() { matches(&ipv6_addresses, |term| term.value >= ipv6_address) }
     / ipv6_addresses:ipv6_addresses(tokens) " < " ipv6_address:ipv6_address() { matches(&ipv6_addresses, |term| term.value < ipv6_address) }
     / ipv6_addresses:ipv6_addresses(tokens) " <= " ipv6_address:ipv6_address() { matches(&ipv6_addresses, |term| term.value <= ipv6_address) }
+    / ipv6_addresses:ipv6_addresses(tokens) " in " ipv6_network:ipv6_network() { matches(&ipv6_addresses, |term| ipv6_network.contains(&term.value)) }
+    / ipv6_addresses:ipv6_addresses(tokens) " not in " ipv6_network:ipv6_network() { matches(&ipv6_addresses, |term| !ipv6_network.contains(&term.value)) }
 
     rule ip_socket_address_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = ip_socket_addresses:ip_socket_addresses(tokens) " == " ip_socket_address:ip_socket_address() { matches(&ip_socket_addresses, |term| term.value == ip_socket_address) }
@@ -428,7 +434,7 @@ impl Validator {
             let separator_characters = separators.comprise_any(characters);
             if separator_characters.chars().count() != 0 {
                 return Err(anyhow!(
-                    "separator(s) '{}' can not be used with an expression containing '{}'",
+                    "separator(s) '{}' can not be used with an expression containing type '{}'",
                     separator_characters,
                     class
                 ));
@@ -890,6 +896,14 @@ mod evaluation_tests {
             Ok(HashSet::from([0]))
         );
         assert_eq!(
+            expression::evaluate("$ipAddress in 8.8.8.0/24", &tokens, &formats),
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipAddress in 2001:4860::/32", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
             expression::evaluate("$ipv4Address == 8.8.8.8", &tokens, &formats),
             Ok(HashSet::from([0]))
         );
@@ -902,6 +916,14 @@ mod evaluation_tests {
             Ok(HashSet::from([0]))
         );
         assert_eq!(
+            expression::evaluate("$ipv4Address in 8.8.8.0/24", &tokens, &formats),
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipv4Address not in 8.8.8.0/24", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
             expression::evaluate("$ipv6Address == 2001:4860:4860::8888", &tokens, &formats),
             Ok(HashSet::from([1]))
         );
@@ -912,6 +934,14 @@ mod evaluation_tests {
         assert_eq!(
             expression::evaluate("$ipv6Address > 2001:4860:4860::8844", &tokens, &formats),
             Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipv6Address in 2001:4860::/32", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("$ipv6Address not in 2001:4860::/32", &tokens, &formats),
+            Ok(HashSet::from([]))
         );
     }
 

@@ -26,20 +26,25 @@ with <operator>s. In complex expressions parenthesis can be used to group
 The supported <operator>s, <comparator>s, and <type>s and how an <expression>
 is constructed using <condition>s is in BNF below.
 
-<expression>     ::=  <conditions>
-<conditions>     ::=  <condition> |
-                      <conditions> <operator> <conditions> |
-                      ( <conditions> )
-<operator>       ::=  and | or
-<condition>      ::=  <type> <comperator> <value> |
-                      $id <id-comperator> <id>
-<comperator>     ::=  == | != | > | >= | < | <=
-<id-comperator>  ::=  contains | starts-with | ends-with
-<type>           ::=  $integer | $float | $id | $date | $time | $dateTime |
-                      $localDateTime | $ipAddress | $ipv4Address |
-                      $ipv6Address | $ipSocketAddress | $ipv4SocketAddress |
-                      $ipv6SocketAddress | $ipNetwork | $ipv4Network |
-                      $ipv6Network | $semanticVersion
+<expression>         ::=  <conditions>
+<conditions>         ::=  <condition> |
+                          <conditions> <operator> <conditions> |
+                          ( <conditions> )
+<operator>           ::=  and | or
+<condition>          ::=  <type> <comperator> <value> |
+                          $id <string-comperator> <id> |
+                          $ipAddress <set-comperator> <ip-network> |
+                          $ipv4Address <set-comperator> <ipv4-network> |
+                          $ipv6Address <set-comperator> <ipv6-network>
+<comperator>         ::=  == | != | > | >= | < | <=
+<string-comperator>  ::=  contains | starts-with | ends-with
+<set-comperator>     ::=  in | not-in
+<type>               ::=  $integer | $float | $id | $date | $time |
+                          $dateTime | $localDateTime | $ipAddress |
+                          $ipv4Address | $ipv6Address | $ipSocketAddress |
+                          $ipv4SocketAddress | $ipv6SocketAddress |
+                          $ipNetwork | $ipv4Network | $ipv6Network |
+                          $semanticVersion
 
 The expected format of <value> in a <condition> depends on the <type> being
 used:
