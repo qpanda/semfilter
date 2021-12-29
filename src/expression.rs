@@ -349,7 +349,7 @@ peg::parser!(pub grammar expression() for str {
         }
 
     rule semantic_version() -> Version
-        = n:$(['0'..='9'|'.']+) {?
+        = n:$(['0'..='9'|'a'..='f'|'A'..='F'|'.'|'-'|'+']+) {?
             Version::from_word(n, &()).map_err(|_| "failed to parse semantic version")
         }
 });
@@ -414,7 +414,7 @@ impl Validator {
         Validator::validate_class_separators(expression, "$ipNetwork", separators, ".:/")?;
         Validator::validate_class_separators(expression, "$ipv4Network", separators, "./")?;
         Validator::validate_class_separators(expression, "$ipv6Network", separators, ":/")?;
-        Validator::validate_class_separators(expression, "$semanticVersion", separators, ".")?;
+        Validator::validate_class_separators(expression, "$semanticVersion", separators, ".-+")?;
 
         Validator::validate_format_separators(expression, "$date", separators, &formats.date)?;
         Validator::validate_format_separators(expression, "$time", separators, &formats.time)?;
