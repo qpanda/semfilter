@@ -18,48 +18,45 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 const EXPRESSION_HELP: &str = r#"Filter expression applied to tokens found on each input line
 
 SYNTAX
-The expression can be a single <condition> or multiple <condition>s combined
-with <operator>s. In complex expressions parenthesis can be used to group
+An <expression> can be a single <condition> or multiple <condition>s combined
+with <operator>s. In complex <expression>s parenthesis can be used to group
 <condition>s. Each <condition> compares a <type> with a <value> using a
 <comparator>.
 
 The supported <operator>s, <comparator>s, and <type>s and how an <expression>
-is constructed using <condition>s is in BNF below.
+is constructed using <condition>s is shown in BNF below.
 
-<expression>         ::=  <conditions>
-<conditions>         ::=  <condition> |
-                          <conditions> <operator> <conditions> |
-                          ( <conditions> )
-<operator>           ::=  and | or
-<condition>          ::=  <type> <comperator> <value> |
-                          $id <string-comperator> <id> |
-                          $ipAddress <set-comperator> <ip-network> |
-                          $ipv4Address <set-comperator> <ipv4-network> |
-                          $ipv6Address <set-comperator> <ipv6-network>
-<comperator>         ::=  == | != | > | >= | < | <=
-<string-comperator>  ::=  contains | starts-with | ends-with
-<set-comperator>     ::=  in | not-in
-<type>               ::=  $integer | $float | $id | $date | $time |
-                          $dateTime | $localDateTime | $ipAddress |
-                          $ipv4Address | $ipv6Address | $ipSocketAddress |
-                          $ipv4SocketAddress | $ipv6SocketAddress |
-                          $ipNetwork | $ipv4Network | $ipv6Network |
-                          $semanticVersion
+<expression>           ::=  <conditions>
+<conditions>           ::=  <condition> |
+                            <conditions> <operator> <conditions> |
+                            ( <conditions> )
+<operator>             ::=  and | or
+<condition>            ::=  <type> <comperator> <value>
+<comperator>           ::=  <basic-comperator> | <extended-comperator>
+<basic-comperator>     ::=  == | != | > | >= | < | <=
+<extended-comperator>  ::=  contains | starts-with | ends-with |
+                            in | not in | matches
+<type>                 ::=  $integer | $float | $id | $date | $time |
+                            $dateTime | $localDateTime | $ipAddress |
+                            $ipv4Address | $ipv6Address | $ipSocketAddress |
+                            $ipv4SocketAddress | $ipv6SocketAddress |
+                            $ipNetwork | $ipv4Network | $ipv6Network |
+                            $semanticVersion
+<value>                ::=  <integer> | <float> | <id> | <date> | <time> |
+                            <dateTime> | <localDateTime> | <ipAddress> |
+                            <ipv4Address> | <ipv6Address> | <ipSocketAddress> |
+                            <ipv4SocketAddress> | <ipv6SocketAddress> |
+                            <ipNetwork> | <ipv4Network> | <ipv6Network> |
+                            <semanticVersion> | <semanticVersionRequirement>
 
-The expected format of <value> in a <condition> depends on the <type> being
-used:
- * $integer must be compared with a valid integer value
- * $float must be compared with a valid float value (scientific notation,
-   infinity, negative infinity, and not-a-number are not supported)
- * $id must be compared with a valid id which is a alphanumeric string which
-   may contain cotaining special characters '.:_-'
- * $date, $time, $dateTime, and $localDateTime must be compared with a value
-   that conforms to the format string
- * $ipAddress, $ipv4Address, $ipv6Address, $ipSocketAddress,
-   $ipv4SocketAddress, $ipv6SocketAddress, $ipNetwork, $ipv4Network,
-   $ipv6Network must be compared with a valid IP or socket address
- * $semanticVersion must be compared with a string representing a valid
-   semantic version
+The expected format of <value> in a <condition> depends on the <type> and
+<comperator> being used (not all combinations are supported).
+
+In <condition>s <basic-comperator>s are supported for all <type>s whereas
+<extended-comperator> are supported only for some <type>s and may require a
+different <value>.
+
+Please refer to the README.md for more details on the expression syntax.
 
 EXAMPLES
 '$semanticVersion >= 0.2.0'
