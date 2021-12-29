@@ -3,7 +3,7 @@ extern crate peg;
 use anyhow::{anyhow, Error};
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
 use ipnet::{IpNet, Ipv4Net, Ipv6Net};
-use semver::Version;
+use semver::{Version, VersionReq};
 use std::collections::HashSet;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
@@ -210,6 +210,7 @@ peg::parser!(pub grammar expression() for str {
     / semantic_versions:semantic_versions(tokens) " >= " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value >= semantic_version) }
     / semantic_versions:semantic_versions(tokens) " < " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value < semantic_version) }
     / semantic_versions:semantic_versions(tokens) " <= " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value <= semantic_version) }
+    / semantic_versions:semantic_versions(tokens) " matches " semantic_version_requirement:semantic_version_requirement() { matches(&semantic_versions, |term| semantic_version_requirement.matches(&term.value)) }
 
     //
     // terms
@@ -351,6 +352,11 @@ peg::parser!(pub grammar expression() for str {
     rule semantic_version() -> Version
         = n:$(['0'..='9'|'a'..='f'|'A'..='F'|'.'|'-'|'+']+) {?
             Version::from_word(n, &()).map_err(|_| "failed to parse semantic version")
+        }
+
+    rule semantic_version_requirement() -> VersionReq
+        = n:$(['0'..='9'|'a'..='f'|'A'..='F'|'.'|'-'|'+'|'>'|'<'|'='|'~'|'^'|'*'|',']+) {?
+            VersionReq::from_word(n, &()).map_err(|_| "failed to parse semantic version requirement")
         }
 });
 
@@ -1063,7 +1069,7 @@ mod evaluation_tests {
     fn evaluate_semantic_version_expression() {
         // setup
         let tokens = vec![Token {
-            position: 11,
+            position: 0,
             separator: false,
             word: "1.2.3",
         }];
@@ -1073,7 +1079,7 @@ mod evaluation_tests {
         // exercise & verify
         assert_eq!(
             expression::evaluate("$semanticVersion == 1.2.3", &tokens, &formats),
-            Ok(HashSet::from([11]))
+            Ok(HashSet::from([0]))
         );
         assert_eq!(
             expression::evaluate("$semanticVersion != 1.2.3", &tokens, &formats),
@@ -1081,7 +1087,15 @@ mod evaluation_tests {
         );
         assert_eq!(
             expression::evaluate("$semanticVersion > 1.0.0", &tokens, &formats),
-            Ok(HashSet::from([11]))
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("$semanticVersion matches >=1.2.3,<1.8.0", &tokens, &formats),
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("$semanticVersion matches ~1.2.3", &tokens, &formats),
+            Ok(HashSet::from([0]))
         );
     }
 

@@ -1,7 +1,7 @@
 use anyhow::Error;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime};
 use ipnet::{IpNet, Ipv4Net, Ipv6Net};
-use semver::Version;
+use semver::{Version, VersionReq};
 use std::marker::PhantomData;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 
@@ -113,6 +113,12 @@ impl FromWord<()> for Ipv6Net {
 impl FromWord<()> for Version {
     fn from_word(word: &str, _: &()) -> Result<Self, Error> {
         Version::parse(word).map_err(|e| e.into())
+    }
+}
+
+impl FromWord<()> for VersionReq {
+    fn from_word(word: &str, _: &()) -> Result<Self, Error> {
+        VersionReq::parse(word).map_err(|e| e.into())
     }
 }
 
@@ -443,6 +449,22 @@ mod value_tests {
 
         // verify
         assert_eq!(version, ok.unwrap());
+        assert_eq!(true, err_1.is_err());
+        assert_eq!(true, err_2.is_err());
+    }
+
+    #[test]
+    fn new_semantic_version_requirement() {
+        // setup
+        let requirement = VersionReq::parse(">=1.2.3,<1.8").unwrap();
+
+        // exercise
+        let ok = VersionReq::from_word(&requirement.to_string(), &());
+        let err_1 = VersionReq::from_word("1:2:3", &());
+        let err_2 = VersionReq::from_word("word", &());
+
+        // verify
+        assert_eq!(requirement, ok.unwrap());
         assert_eq!(true, err_1.is_err());
         assert_eq!(true, err_2.is_err());
     }
