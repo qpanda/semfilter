@@ -21,21 +21,23 @@ SYNTAX
 An <expression> can be a single <condition> or multiple <condition>s combined
 with <operator>s. In complex <expression>s parenthesis can be used to group
 <condition>s. Each <condition> compares a <type> with a <value> using a
-<comparator>.
+<comparator>. For some <type>s a <function> can be applied before comparison.
 
-The supported <operator>s, <comparator>s, and <type>s and how an <expression>
-is constructed using <condition>s is shown in BNF below.
+The supported <operator>s, <comparator>s, <type>s, and <function>s, and how an
+<expression> is constructed using <condition>s is shown in BNF below.
 
 <expression>           ::=  <conditions>
 <conditions>           ::=  <condition> |
                             <conditions> <operator> <conditions> |
                             ( <conditions> )
 <operator>             ::=  and | or
-<condition>            ::=  <type> <comperator> <value>
+<condition>            ::=  <type> <comperator> <value> |
+                            <function>(<type>) <comperator> <value>
 <comperator>           ::=  <basic-comperator> | <extended-comperator>
 <basic-comperator>     ::=  == | != | > | >= | < | <=
 <extended-comperator>  ::=  contains | starts-with | ends-with |
                             in | not in | matches
+<function>             ::=  port | ip
 <type>                 ::=  $integer | $float | $id | $date | $time |
                             $dateTime | $localDateTime | $ipAddress |
                             $ipv4Address | $ipv6Address | $ipSocketAddress |
@@ -56,7 +58,9 @@ In <condition>s <basic-comperator>s are supported for all <type>s whereas
 <extended-comperator> are supported only for some <type>s and may require a
 different <value>.
 
-Please refer to the README.md for more details on the expression syntax.
+In <condition>s <function>s can be applied only to some <type>s.
+
+Please refer to the EXPRESSION.md for more details on the expression syntax.
 
 EXAMPLES
 '$semanticVersion >= 0.2.0'

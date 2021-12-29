@@ -162,6 +162,20 @@ peg::parser!(pub grammar expression() for str {
     / ip_socket_addresses:ip_socket_addresses(tokens) " >= " ip_socket_address:ip_socket_address() { matches(&ip_socket_addresses, |term| term.value >= ip_socket_address) }
     / ip_socket_addresses:ip_socket_addresses(tokens) " < " ip_socket_address:ip_socket_address() { matches(&ip_socket_addresses, |term| term.value < ip_socket_address) }
     / ip_socket_addresses:ip_socket_addresses(tokens) " <= " ip_socket_address:ip_socket_address() { matches(&ip_socket_addresses, |term| term.value <= ip_socket_address) }
+    / ip_socket_address_ports:ip_socket_address_ports(tokens) " == " port:port() { matches(&ip_socket_address_ports, |term| term.value == port) }
+    / ip_socket_address_ports:ip_socket_address_ports(tokens) " != " port:port() { matches(&ip_socket_address_ports, |term| term.value != port) }
+    / ip_socket_address_ports:ip_socket_address_ports(tokens) " > " port:port() { matches(&ip_socket_address_ports, |term| term.value > port) }
+    / ip_socket_address_ports:ip_socket_address_ports(tokens) " >= " port:port() { matches(&ip_socket_address_ports, |term| term.value >= port) }
+    / ip_socket_address_ports:ip_socket_address_ports(tokens) " < " port:port() { matches(&ip_socket_address_ports, |term| term.value < port) }
+    / ip_socket_address_ports:ip_socket_address_ports(tokens) " <= " port:port() { matches(&ip_socket_address_ports, |term| term.value <= port) }
+    / ip_socket_address_ips:ip_socket_address_ips(tokens) " == " ip_address:ip_address() { matches(&ip_socket_address_ips, |term| term.value == ip_address) }
+    / ip_socket_address_ips:ip_socket_address_ips(tokens) " != " ip_address:ip_address() { matches(&ip_socket_address_ips, |term| term.value != ip_address) }
+    / ip_socket_address_ips:ip_socket_address_ips(tokens) " > " ip_address:ip_address() { matches(&ip_socket_address_ips, |term| term.value > ip_address) }
+    / ip_socket_address_ips:ip_socket_address_ips(tokens) " >= " ip_address:ip_address() { matches(&ip_socket_address_ips, |term| term.value >= ip_address) }
+    / ip_socket_address_ips:ip_socket_address_ips(tokens) " < " ip_address:ip_address() { matches(&ip_socket_address_ips, |term| term.value < ip_address) }
+    / ip_socket_address_ips:ip_socket_address_ips(tokens) " <= " ip_address:ip_address() { matches(&ip_socket_address_ips, |term| term.value <= ip_address) }
+    / ip_socket_address_ips:ip_socket_address_ips(tokens) " in " ip_network:ip_network() { matches(&ip_socket_address_ips, |term| ip_network.contains(&term.value)) }
+    / ip_socket_address_ips:ip_socket_address_ips(tokens) " not in " ip_network:ip_network() { matches(&ip_socket_address_ips, |term| !ip_network.contains(&term.value)) }
 
     rule ipv4_socket_address_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = ipv4_socket_addresses:ipv4_socket_addresses(tokens) " == " ipv4_socket_address:ipv4_socket_address() { matches(&ipv4_socket_addresses, |term| term.value == ipv4_socket_address) }
@@ -170,6 +184,20 @@ peg::parser!(pub grammar expression() for str {
     / ipv4_socket_addresses:ipv4_socket_addresses(tokens) " >= " ipv4_socket_address:ipv4_socket_address() { matches(&ipv4_socket_addresses, |term| term.value >= ipv4_socket_address) }
     / ipv4_socket_addresses:ipv4_socket_addresses(tokens) " < " ipv4_socket_address:ipv4_socket_address() { matches(&ipv4_socket_addresses, |term| term.value < ipv4_socket_address) }
     / ipv4_socket_addresses:ipv4_socket_addresses(tokens) " <= " ipv4_socket_address:ipv4_socket_address() { matches(&ipv4_socket_addresses, |term| term.value <= ipv4_socket_address) }
+    / ipv4_socket_address_ports:ipv4_socket_address_ports(tokens) " == " port:port() { matches(&ipv4_socket_address_ports, |term| term.value == port) }
+    / ipv4_socket_address_ports:ipv4_socket_address_ports(tokens) " != " port:port() { matches(&ipv4_socket_address_ports, |term| term.value != port) }
+    / ipv4_socket_address_ports:ipv4_socket_address_ports(tokens) " > " port:port() { matches(&ipv4_socket_address_ports, |term| term.value > port) }
+    / ipv4_socket_address_ports:ipv4_socket_address_ports(tokens) " >= " port:port() { matches(&ipv4_socket_address_ports, |term| term.value >= port) }
+    / ipv4_socket_address_ports:ipv4_socket_address_ports(tokens) " < " port:port() { matches(&ipv4_socket_address_ports, |term| term.value < port) }
+    / ipv4_socket_address_ports:ipv4_socket_address_ports(tokens) " <= " port:port() { matches(&ipv4_socket_address_ports, |term| term.value <= port) }
+    / ipv4_socket_address_ips:ipv4_socket_address_ips(tokens) " == " ip_address:ip_address() { matches(&ipv4_socket_address_ips, |term| term.value == ip_address) }
+    / ipv4_socket_address_ips:ipv4_socket_address_ips(tokens) " != " ip_address:ip_address() { matches(&ipv4_socket_address_ips, |term| term.value != ip_address) }
+    / ipv4_socket_address_ips:ipv4_socket_address_ips(tokens) " > " ip_address:ip_address() { matches(&ipv4_socket_address_ips, |term| term.value > ip_address) }
+    / ipv4_socket_address_ips:ipv4_socket_address_ips(tokens) " >= " ip_address:ip_address() { matches(&ipv4_socket_address_ips, |term| term.value >= ip_address) }
+    / ipv4_socket_address_ips:ipv4_socket_address_ips(tokens) " < " ip_address:ip_address() { matches(&ipv4_socket_address_ips, |term| term.value < ip_address) }
+    / ipv4_socket_address_ips:ipv4_socket_address_ips(tokens) " <= " ip_address:ip_address() { matches(&ipv4_socket_address_ips, |term| term.value <= ip_address) }
+    / ipv4_socket_address_ips:ipv4_socket_address_ips(tokens) " in " ipv4_network:ipv4_network() { matches(&ipv4_socket_address_ips, |term| ipv4_network.contains(&term.value)) }
+    / ipv4_socket_address_ips:ipv4_socket_address_ips(tokens) " not in " ipv4_network:ipv4_network() { matches(&ipv4_socket_address_ips, |term| !ipv4_network.contains(&term.value)) }
 
     rule ipv6_socket_address_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = ipv6_socket_addresses:ipv6_socket_addresses(tokens) " == " ipv6_socket_address:ipv6_socket_address() { matches(&ipv6_socket_addresses, |term| term.value == ipv6_socket_address) }
@@ -178,6 +206,20 @@ peg::parser!(pub grammar expression() for str {
     / ipv6_socket_addresses:ipv6_socket_addresses(tokens) " >= " ipv6_socket_address:ipv6_socket_address() { matches(&ipv6_socket_addresses, |term| term.value >= ipv6_socket_address) }
     / ipv6_socket_addresses:ipv6_socket_addresses(tokens) " < " ipv6_socket_address:ipv6_socket_address() { matches(&ipv6_socket_addresses, |term| term.value < ipv6_socket_address) }
     / ipv6_socket_addresses:ipv6_socket_addresses(tokens) " <= " ipv6_socket_address:ipv6_socket_address() { matches(&ipv6_socket_addresses, |term| term.value <= ipv6_socket_address) }
+    / ipv6_socket_address_ports:ipv6_socket_address_ports(tokens) " == " port:port() { matches(&ipv6_socket_address_ports, |term| term.value == port) }
+    / ipv6_socket_address_ports:ipv6_socket_address_ports(tokens) " != " port:port() { matches(&ipv6_socket_address_ports, |term| term.value != port) }
+    / ipv6_socket_address_ports:ipv6_socket_address_ports(tokens) " > " port:port() { matches(&ipv6_socket_address_ports, |term| term.value > port) }
+    / ipv6_socket_address_ports:ipv6_socket_address_ports(tokens) " >= " port:port() { matches(&ipv6_socket_address_ports, |term| term.value >= port) }
+    / ipv6_socket_address_ports:ipv6_socket_address_ports(tokens) " < " port:port() { matches(&ipv6_socket_address_ports, |term| term.value < port) }
+    / ipv6_socket_address_ports:ipv6_socket_address_ports(tokens) " <= " port:port() { matches(&ipv6_socket_address_ports, |term| term.value <= port) }
+    / ipv6_socket_address_ips:ipv6_socket_address_ips(tokens) " == " ip_address:ip_address() { matches(&ipv6_socket_address_ips, |term| term.value == ip_address) }
+    / ipv6_socket_address_ips:ipv6_socket_address_ips(tokens) " != " ip_address:ip_address() { matches(&ipv6_socket_address_ips, |term| term.value != ip_address) }
+    / ipv6_socket_address_ips:ipv6_socket_address_ips(tokens) " > " ip_address:ip_address() { matches(&ipv6_socket_address_ips, |term| term.value > ip_address) }
+    / ipv6_socket_address_ips:ipv6_socket_address_ips(tokens) " >= " ip_address:ip_address() { matches(&ipv6_socket_address_ips, |term| term.value >= ip_address) }
+    / ipv6_socket_address_ips:ipv6_socket_address_ips(tokens) " < " ip_address:ip_address() { matches(&ipv6_socket_address_ips, |term| term.value < ip_address) }
+    / ipv6_socket_address_ips:ipv6_socket_address_ips(tokens) " <= " ip_address:ip_address() { matches(&ipv6_socket_address_ips, |term| term.value <= ip_address) }
+    / ipv6_socket_address_ips:ipv6_socket_address_ips(tokens) " in " ipv6_network:ipv6_network() { matches(&ipv6_socket_address_ips, |term| ipv6_network.contains(&term.value)) }
+    / ipv6_socket_address_ips:ipv6_socket_address_ips(tokens) " not in " ipv6_network:ipv6_network() { matches(&ipv6_socket_address_ips, |term| !ipv6_network.contains(&term.value)) }
 
     rule ip_network_condition(tokens: &Vec<Token>) -> HashSet<Position>
     = ip_networks:ip_networks(tokens) " == " ip_network:ip_network() { matches(&ip_networks, |term| term.value == ip_network) }
@@ -211,6 +253,73 @@ peg::parser!(pub grammar expression() for str {
     / semantic_versions:semantic_versions(tokens) " < " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value < semantic_version) }
     / semantic_versions:semantic_versions(tokens) " <= " semantic_version:semantic_version() { matches(&semantic_versions, |term| term.value <= semantic_version) }
     / semantic_versions:semantic_versions(tokens) " matches " semantic_version_requirement:semantic_version_requirement() { matches(&semantic_versions, |term| semantic_version_requirement.matches(&term.value)) }
+
+    // functions
+    rule ip_socket_address_ports(tokens: &Vec<Token>) -> Vec<Term<u16>>
+    = "port(" ip_socket_addresses:ip_socket_addresses(tokens) ")" {
+        ip_socket_addresses
+            .into_iter()
+            .map(|ip_socket_address| Term {
+                position: ip_socket_address.position,
+                value: ip_socket_address.value.port(),
+            })
+            .collect()
+    }
+
+    rule ipv4_socket_address_ports(tokens: &Vec<Token>) -> Vec<Term<u16>>
+    = "port(" ipv4_socket_addresses:ipv4_socket_addresses(tokens) ")" {
+        ipv4_socket_addresses
+            .into_iter()
+            .map(|ipv4_socket_address| Term {
+                position: ipv4_socket_address.position,
+                value: ipv4_socket_address.value.port(),
+            })
+            .collect()
+    }
+
+    rule ipv6_socket_address_ports(tokens: &Vec<Token>) -> Vec<Term<u16>>
+    = "port(" ipv6_socket_addresses:ipv6_socket_addresses(tokens) ")" {
+        ipv6_socket_addresses
+            .into_iter()
+            .map(|ipv6_socket_address| Term {
+                position: ipv6_socket_address.position,
+                value: ipv6_socket_address.value.port(),
+            })
+            .collect()
+    }
+
+    rule ip_socket_address_ips(tokens: &Vec<Token>) -> Vec<Term<IpAddr>>
+    = "ip(" ip_socket_addresses:ip_socket_addresses(tokens) ")" {
+        ip_socket_addresses
+            .into_iter()
+            .map(|ip_socket_address| Term {
+                position: ip_socket_address.position,
+                value: ip_socket_address.value.ip(),
+            })
+            .collect()
+    }
+
+    rule ipv4_socket_address_ips(tokens: &Vec<Token>) -> Vec<Term<Ipv4Addr>>
+    = "ip(" ipv4_socket_addresses:ipv4_socket_addresses(tokens) ")" {
+        ipv4_socket_addresses
+            .into_iter()
+            .map(|ipv4_socket_address| Term {
+                position: ipv4_socket_address.position,
+                value: ipv4_socket_address.value.ip().clone(),
+            })
+            .collect()
+    }
+
+    rule ipv6_socket_address_ips(tokens: &Vec<Token>) -> Vec<Term<Ipv6Addr>>
+    = "ip(" ipv6_socket_addresses:ipv6_socket_addresses(tokens) ")" {
+        ipv6_socket_addresses
+            .into_iter()
+            .map(|ipv6_socket_address| Term {
+                position: ipv6_socket_address.position,
+                value: ipv6_socket_address.value.ip().clone(),
+            })
+            .collect()
+    }
 
     //
     // terms
@@ -277,6 +386,11 @@ peg::parser!(pub grammar expression() for str {
     rule float() -> f64
         = n:$(['+'|'-']? ['0'..='9']* ['.']? ['0'..='9']*) {?
             f64::from_word(n, &()).map_err(|_| "failed to parse float")
+        }
+
+    rule port() -> u16
+        = n:$(['0'..='9']+) {?
+            u16::from_word(n, &()).map_err(|_| "failed to parse port")
         }
 
     rule id() -> Id
@@ -987,6 +1101,30 @@ mod evaluation_tests {
             Ok(HashSet::from([0]))
         );
         assert_eq!(
+            expression::evaluate("port($ipSocketAddress) == 53", &tokens, &formats),
+            Ok(HashSet::from([0, 1]))
+        );
+        assert_eq!(
+            expression::evaluate("port($ipSocketAddress) != 53", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipSocketAddress) == 8.8.8.8", &tokens, &formats),
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipSocketAddress) != 8.8.8.8", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipSocketAddress) in 8.8.8.0/24", &tokens, &formats),
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipSocketAddress) not in 8.8.8.0/24", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
             expression::evaluate("$ipv4SocketAddress == 8.8.8.8:53", &tokens, &formats),
             Ok(HashSet::from([0]))
         );
@@ -999,6 +1137,30 @@ mod evaluation_tests {
             Ok(HashSet::from([0]))
         );
         assert_eq!(
+            expression::evaluate("port($ipv4SocketAddress) == 53", &tokens, &formats),
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("port($ipv4SocketAddress) != 53", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipv4SocketAddress) == 8.8.8.8", &tokens, &formats),
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipv4SocketAddress) != 8.8.8.8", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipv4SocketAddress) in 8.8.8.0/24", &tokens, &formats),
+            Ok(HashSet::from([0]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipv4SocketAddress) not in 8.8.8.0/24", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
             expression::evaluate("$ipv6SocketAddress == [2001:4860:4860::8888]:53", &tokens, &formats),
             Ok(HashSet::from([1]))
         );
@@ -1009,6 +1171,30 @@ mod evaluation_tests {
         assert_eq!(
             expression::evaluate("$ipv6SocketAddress > [2001:4860:4860::8844]:53", &tokens, &formats),
             Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("port($ipv6SocketAddress) == 53", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("port($ipv6SocketAddress) != 53", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipv6SocketAddress) == 2001:4860:4860::8888", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipv6SocketAddress) != 2001:4860:4860::8888", &tokens, &formats),
+            Ok(HashSet::from([]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipv6SocketAddress) in 2001:4860::/32", &tokens, &formats),
+            Ok(HashSet::from([1]))
+        );
+        assert_eq!(
+            expression::evaluate("ip($ipv6SocketAddress) not in 2001:4860::/32", &tokens, &formats),
+            Ok(HashSet::from([]))
         );
     }
 

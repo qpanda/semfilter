@@ -26,6 +26,12 @@ impl FromWord<()> for f64 {
     }
 }
 
+impl FromWord<()> for u16 {
+    fn from_word(word: &str, _: &()) -> Result<Self, Error> {
+        word.parse::<u16>().map_err(|e| e.into())
+    }
+}
+
 impl FromWord<()> for Id {
     fn from_word(word: &str, _: &()) -> Result<Self, Error> {
         Ok(Id::from(word))
@@ -182,6 +188,22 @@ mod value_tests {
         assert_eq!(float, ok_1.unwrap());
         assert_eq!(integer as f64, ok_2.unwrap());
         assert_eq!(true, err.is_err());
+    }
+
+    #[test]
+    fn new_port() {
+        // setup
+        let port = 8;
+
+        // exercise
+        let ok = u16::from_word(&port.to_string(), &());
+        let err_1 = u16::from_word("5.5", &());
+        let err_2 = u16::from_word("word", &());
+
+        // verify
+        assert_eq!(port, ok.unwrap());
+        assert_eq!(true, err_1.is_err());
+        assert_eq!(true, err_2.is_err());
     }
 
     #[test]
