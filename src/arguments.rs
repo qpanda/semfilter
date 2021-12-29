@@ -20,25 +20,26 @@ const EXPRESSION_HELP: &str = r#"Filter expression applied to tokens found on ea
 SYNTAX
 An <expression> can be a single <condition> or multiple <condition>s combined
 with <operator>s. In complex <expression>s parenthesis can be used to group
-<condition>s. Each <condition> compares a <type> with a <value> using a
-<comparator>. For some <type>s a <function> can be applied before comparison.
+<condition>s. Each <condition> compares a typed <variable> with a literal
+<value> using a <comparator>. A <function> can be applied to some typed
+<variable>s before comparison with the literal <value>.
 
-The supported <operator>s, <comparator>s, <type>s, and <function>s, and how an
-<expression> is constructed using <condition>s is shown in BNF below.
+The supported <operator>s, <comparator>s, <variable>s, and <function>s, and
+how an <expression> is constructed using <condition>s is shown in EBNF below.
 
 <expression>           ::=  <conditions>
 <conditions>           ::=  <condition> |
                             <conditions> <operator> <conditions> |
                             ( <conditions> )
 <operator>             ::=  and | or
-<condition>            ::=  <type> <comperator> <value> |
-                            <function>(<type>) <comperator> <value>
+<condition>            ::=  <variable> <comperator> <value> |
+                            <function>(<variable>) <comperator> <value>
 <comperator>           ::=  <basic-comperator> | <extended-comperator>
 <basic-comperator>     ::=  == | != | > | >= | < | <=
 <extended-comperator>  ::=  contains | starts-with | ends-with |
                             in | not in | matches
 <function>             ::=  port | ip
-<type>                 ::=  $integer | $float | $id | $date | $time |
+<variable>             ::=  $integer | $float | $id | $date | $time |
                             $dateTime | $localDateTime | $ipAddress |
                             $ipv4Address | $ipv6Address | $ipSocketAddress |
                             $ipv4SocketAddress | $ipv6SocketAddress |
@@ -49,18 +50,18 @@ The supported <operator>s, <comparator>s, <type>s, and <function>s, and how an
                             <ipv4Address> | <ipv6Address> | <ipSocketAddress> |
                             <ipv4SocketAddress> | <ipv6SocketAddress> |
                             <ipNetwork> | <ipv4Network> | <ipv6Network> |
-                            <semanticVersion> | <semanticVersionRequirement>
+                            <semanticVersion> | <semanticVersionRequirement> |
+                            <port>
 
-The expected format of <value> in a <condition> depends on the <type> and
-<comperator> being used (not all combinations are supported).
+The expected format of the literal <value> in a <condition> depends on the
+<variable> type and the <comperator> being used. Which <comperator> can be
+used depends on the <variable> type; <basic-comperator>s are supported for all
+types whereas <extended-comperator>s are supported only for some types.
 
-In <condition>s <basic-comperator>s are supported for all <type>s whereas
-<extended-comperator> are supported only for some <type>s and may require a
-different <value>.
+In <condition>s <function>s can be applied only to some <variable> types.
 
-In <condition>s <function>s can be applied only to some <type>s.
-
-Please refer to the EXPRESSION.md for more details on the expression syntax.
+Please refer to https://github.com/qpanda/semfilter/blob/master/EXPRESSION.md
+for more details on the expression syntax.
 
 EXAMPLES
 '$semanticVersion >= 0.2.0'
@@ -71,6 +72,9 @@ EXAMPLES
    Match all lines containing an id value equal to 'qpanda' and a time value
    greater than 21:00:00
 
+'$id == ESTABLISHED and ip($ipv4SocketAddress) in 193.32.160.0/24'
+   Match all lines containing an id value equal to 'ESTABLISHED' and a IPv4
+   socket address which has an IPv4 address in IPv4 network 193.32.160.0/24
 
 "#;
 
@@ -132,6 +136,7 @@ impl Arguments {
                     .default_value(FILTER_HIGHLIGHT)
                     .possible_values(&[FILTER, HIGHLIGHT, FILTER_HIGHLIGHT])
                     .help("Filter mode")
+                    .long_help("Filter mode to use; in mode 'filter' only matching lines are printed, in mode 'filter-and-highlight' only matching lins are printed and matching tokens are highlighted in color, in mode 'highlight' all lines are printed and matching tokens are highlighted in color\n")
                     .display_order(3)
                     .next_line_help(true),
             )
@@ -143,7 +148,7 @@ impl Arguments {
                     .number_of_values(1)
                     .possible_values(&[&[WHITESPACES], SEPARATORS].concat())
                     .help("Separator(s) to add to default separators")
-                    .long_help("Separator(s) to add to default separators [:space:],;|'\"()<=>{} used to split each input line into tokens.\n")
+                    .long_help("Separator(s) to add to default separators [:space:],;|'\"()<=>{} used to split each input line into tokens\n")
                     .display_order(4)
                     .next_line_help(true),
             )
@@ -155,7 +160,7 @@ impl Arguments {
                     .number_of_values(1)
                     .possible_values(&[&[WHITESPACES], SEPARATORS].concat())
                     .help("Separator(s) to remove from default separators")
-                    .long_help("Separator(s) to remove from default separators [:space:],;|'\"()<=>{} used to split each input line into tokens.\n")
+                    .long_help("Separator(s) to remove from default separators [:space:],;|'\"()<=>{} used to split each input line into tokens\n")
                     .display_order(5)
                     .next_line_help(true),
             )

@@ -16,3 +16,6 @@ Git [rebase is preferred over merge](https://www.atlassian.com/git/tutorials/mer
 
 ### Error Handling
 **semfilter** uses [Anyhow](https://crates.io/crates/anyhow) for error handling. All fallible functions return `Result<T, anyhow::Error>` with additional context added when appropriate.
+
+## Outstanding Issues
+There are still many [outstanding issues](https://github.com/qpanda/semfilter/issues) that need to be addressed before **semfilter** reaches version `1.0.0`.

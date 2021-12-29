@@ -14,7 +14,7 @@ where `FLAGS`, `OPTIONS`, and `expression` are:
 
 Run `semfilter -h` from the terminal window for an overview of supported `FLAGS` and `OPTIONS`.
 
-Run `semfilter --help` from the terminal window for detailed information on `FLAGS` and `OPTIONS` and an explanation of the `expression` syntax.
+Run `semfilter --help` from the terminal window for detailed information on `FLAGS` and `OPTIONS` and an overview of the [expression syntax](EXPRESSION.md).
 
 > **Note**: By default **semfilter** reads from **stdin** and writes to **stdout**.
 
