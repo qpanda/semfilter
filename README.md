@@ -48,6 +48,27 @@ qpanda    pts/1    10.10.0.8   21:41    7.00s  0.00s  0.00s zsh
 $
 ```
 
+**Filtering netstat output**
+```console
+$ netstat -nt
+Active Internet connections (w/o servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State
+tcp        1      0 109.74.193.253:25       193.32.160.143:41356    ESTABLISHED
+tcp        0      0 109.74.193.253:22       79.131.135.223:64917    ESTABLISHED
+tcp        1      0 109.74.193.253:25       193.32.160.136:37752    CLOSE_WAIT
+tcp        1      0 109.74.193.253:25       193.32.160.136:49900    CLOSE_WAIT
+tcp        1      0 109.74.193.253:25       193.32.160.136:37752    ESTABLISHED
+tcp        1      0 109.74.193.253:25       193.32.160.136:49900    CLOSE_WAIT
+tcp        0      0 109.74.193.253:80       104.18.40.175:26111     SYN_RECV
+tcp        0      0 109.74.193.253:80       104.18.40.175:47427     SYN_RECV
+tcp        0      0 109.74.193.253:80       104.18.40.175:4436      SYN_RECV
+tcp        0      0 109.74.193.253:80       104.18.41.175:12892     SYN_RECV
+$ netstat -nt | semfilter '$id == ESTABLISHED and ip($ipv4SocketAddress) in 193.32.160.0/24'
+tcp        1      0 109.74.193.253:25       193.32.160.143:41356    ESTABLISHED
+tcp        1      0 109.74.193.253:25       193.32.160.136:37752    ESTABLISHED
+$ 
+```
+
 ## Motivation
 There are plenty of tools to parse and process data in well defined text based formats. There is [jq](https://stedolan.github.io/jq/) a flexible JSON processor, [yq](https://github.com/mikefarah/yq) a portable YAML processor, [xsv](https://github.com/BurntSushi/xsv) which can be used to analyze CSV files, and [XMLStarlet](https://en.wikipedia.org/wiki/XMLStarlet) which provides a set of command line utilities to process XML.
 
