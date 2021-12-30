@@ -1,6 +1,6 @@
 [package]
 name = "semfilter"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Mikael Forslund <756148+mikaelforslund@users.noreply.github.com>", "Erich Liebmann <7557807+qpanda@users.noreply.github.com>"]
 edition = "2018"
 
